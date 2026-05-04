@@ -33,10 +33,11 @@ After required configuration exists, the app should present bottom tabs for the 
 
 - Dashboard
 - Channels
-- Actions
 - Activity
 
-Settings should remain reachable from the app, either through a header action or a future settings entry point, but it is not a primary bottom tab for the MVP unless later product refinement changes that decision.
+Sync/Poll manual actions are embedded in the Dashboard in Phase 5 and are not a primary bottom tab.
+
+Settings should remain reachable from the app through a header/app-shell action, but it is not a primary bottom tab for the MVP.
 
 ## Branding And UI Direction
 
@@ -71,7 +72,8 @@ Phase 0 should expose these learning concepts clearly:
 ## Product Acceptance Criteria
 
 - A new user understands that the app requires YTPipe backend configuration before use.
-- The configured app presents the intended main navigation areas as bottom tabs.
+- The configured app presents Dashboard, Channels, and Activity as the only primary bottom tabs.
+- The configured app does not include a standalone Actions tab.
 - The app has a simple recognizable YTPipe identity without adding a UI component library.
 - The foundation teaches React Navigation directly rather than hiding navigation behind Expo Router.
 - The phase creates enough structure for future implementation specs without over-designing product behavior.
@@ -79,5 +81,5 @@ Phase 0 should expose these learning concepts clearly:
 ## Open Questions For Later Phases
 
 - Whether Settings should become a dedicated tab after the MVP grows.
-- Whether the Actions tab remains standalone or becomes part of Dashboard.
+- Whether a future dedicated admin/actions destination is needed after MVP.
 - Whether React Native Paper should be adopted after the first full vertical slice.

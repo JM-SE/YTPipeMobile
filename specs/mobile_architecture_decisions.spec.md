@@ -12,6 +12,13 @@
 - Rationale: The primary goal is to learn React Native fundamentals, including navigators, stacks, tabs, params, and screen composition.
 - Future: Add an optional learning phase to compare or migrate to Expo Router after the MVP is stable.
 
+## MVP Navigation Shape
+
+- Decision: Use a React Navigation direct app shell with a config-gated root flow and bottom tabs for Dashboard, Channels, and Activity.
+- Decision: Settings is reachable through a header/app-shell action, not as a primary bottom tab.
+- Decision: Manual actions are embedded in the Dashboard Manual actions section; MVP has no standalone Actions tab.
+- Deferred: Expo Router remains deferred to a later comparison/migration phase.
+
 ## TanStack Query For Server State
 
 - Decision: Use TanStack Query for backend server state, caching, refetching, loading states, errors, and mutations.

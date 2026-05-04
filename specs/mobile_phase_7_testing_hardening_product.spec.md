@@ -1,0 +1,136 @@
+# Mobile Phase 7 Testing And Hardening Product Specification
+
+## Phase
+
+Phase 7: Testing and hardening for the mobile MVP.
+
+## Product Goal
+
+Make the refined Phase 0-6 mobile experience MVP-ready by improving confidence, resilience, accessibility, security posture, and demo stability without expanding product scope or adding heavy enterprise infrastructure.
+
+## Product Decisions
+
+- Hardening should be robust and enterprise-inspired, but not excessive for MVP.
+- Current backend contract remains the source of truth.
+- Mobile must never use `INTERNAL_API_BEARER_TOKEN`.
+- Testing should cover smoke and critical flows, not exhaustive per-component coverage.
+- Runtime response validation should cover all MVP backend endpoints used by mobile, with practical fallback behavior.
+- Offline/connectivity UX should be robust with stale cache and retry affordances, but not full offline-first sync.
+- Logging, observability, and external error reporting such as Sentry are deferred to later phases.
+- The implementation spec will define exact test cases, schemas, validation behavior, performance checks, and verification commands later.
+
+## Quality Scope
+
+- Confirm the Phase 0-6 product flows remain coherent end-to-end:
+  - Welcome/setup and bottom tab entry after configuration.
+  - Settings save/test behavior and authenticated `/status` checks.
+  - Dashboard status, service readiness, polling, sync, and quota-risk presentation.
+  - Channel monitoring defaults, search, tabs, detail, and optimistic updates.
+  - Manual actions from Dashboard with running/disabled states and result toasts.
+  - Activity history, filters, expandable rows, delivery error visibility, and infinite scroll.
+- Improve user-facing error clarity while keeping technical details available behind reveal controls where already established.
+- Ensure configuration changes clear or refresh stale server state as expected.
+- Maintain lightweight enterprise patterns without adding unnecessary abstraction.
+
+## Testing Scope
+
+- Minimum coverage includes smoke and critical tests for:
+  - App launch, setup, configuration, and navigation between primary areas.
+  - Settings save/test success and authenticated API error states, including `401` routing or linking to Settings.
+  - API/server-state diagnostic, friendly errors, stale warning behavior, and retry affordances.
+  - Dashboard readiness and critical manual actions: sync and poll.
+  - Channel monitoring toggle flow, including optimistic behavior and failure recovery.
+  - Activity loading, filtering, expansion, pagination, and failed/retry delivery-error visibility.
+- Tests should prioritize critical user journeys and regression confidence over exhaustive component coverage.
+- Implementation details such as exact test files, mocks, fixtures, commands, and CI expectations are deferred to the implementation spec.
+
+## Accessibility Scope
+
+- Apply a basic accessibility checklist across MVP screens:
+  - Meaningful labels for interactive controls, status indicators, inputs, toggles, and icon-only actions.
+  - Appropriate roles or semantics for buttons, tabs, switches, links, lists, banners, and dialogs.
+  - Touch targets large enough for comfortable mobile use.
+  - Reasonable color contrast for text, warnings, errors, disabled states, and quota-risk indicators.
+  - Clear navigation order and understandable screen titles, modals, and empty states.
+- Accessibility hardening should improve usability without redesigning the app.
+
+## Runtime Validation Scope
+
+- Add practical response validation for all MVP endpoints used by mobile:
+  - `/status`
+  - `/internal/channels`
+  - Channel monitoring `PATCH` response
+  - `/internal/subscriptions/sync` aggregate response as feasible
+  - `/internal/run-poll`
+  - `/internal/activity`
+- Validation should protect the UI from malformed, missing, or contract-drifted data.
+- Validation failures should result in friendly user-facing errors and safe fallback states rather than crashes.
+- Exact Zod schemas, leniency rules, fallback behavior, and technical diagnostic details are deferred to the implementation spec.
+
+## Offline And Connectivity UX
+
+- Provide robust offline and poor-connectivity behavior for MVP:
+  - Clear offline or connectivity banners when network state prevents fresh data.
+  - Stale cache indicators when showing previously loaded data.
+  - Retry actions for failed refreshes or manual operations where appropriate.
+  - Conservative automatic retries to avoid noisy or confusing behavior.
+  - Safe disabled/running states for actions that cannot complete offline.
+- The app should remain understandable and navigable while offline, but does not need offline-first sync, queued writes, or background reconciliation.
+
+## Security Hardening Scope
+
+- Complete a product security checklist covering:
+  - Mobile API token is hidden by default and not exposed in logs, errors, toasts, diagnostics, screenshots generated by tests, or technical detail reveals.
+  - Error details do not leak secrets or backend internals beyond what is needed for troubleshooting.
+  - External YouTube links open safely and clearly as external navigation.
+  - Config reset or changes clear sensitive and stale cached state appropriately.
+  - The mobile app uses only the configured mobile API token and never references or relies on `INTERNAL_API_BEARER_TOKEN`.
+  - Localhost `http`/`https` support remains available for development while preserving safe handling of user-provided API base URLs.
+- Security hardening should focus on MVP risks and avoid adding heavyweight identity, device management, or secrets infrastructure.
+
+## Performance Hardening Scope
+
+- Perform a focused MVP performance audit covering:
+  - Activity infinite scroll and list rendering behavior.
+  - Channel list search, segmented tabs, and monitoring toggle responsiveness.
+  - Dashboard refresh intervals, polling cadence, and stale-data warnings.
+  - Avoidance of obvious rerender loops, duplicate requests, and excessive refreshes.
+  - Reasonable loading, empty, disabled, and error states during slow responses.
+- Performance work should address visible UX risks and demo stability rather than premature optimization.
+
+## MVP Readiness Criteria
+
+- Functional checklist passes for all Phase 0-6 critical flows.
+- Smoke and critical tests pass according to the implementation spec.
+- App demonstrates stable behavior against both local and staging backend environments.
+- Connectivity loss, API errors, malformed responses, and unauthorized states are handled without crashes.
+- Token handling, config reset, and absence of internal-token usage pass the security checklist.
+- Accessibility checklist is reviewed and critical issues are fixed or explicitly deferred.
+- List, refresh, and manual-action flows remain responsive during a realistic demo dataset.
+
+## Out Of Scope
+
+- Sentry or other external error reporting and observability platforms.
+- Full offline-first sync, queued writes, or conflict resolution.
+- Exhaustive per-component test coverage.
+- Major UI redesigns beyond accessibility and hardening adjustments.
+- New backend endpoints or backend contract changes unless required to resolve a blocking defect.
+- Enterprise authentication, device management, audit logging, or policy controls.
+
+## Product Acceptance Criteria
+
+- [ ] Phase 7 hardening preserves all refined Phase 0-6 product decisions.
+- [ ] Smoke and critical coverage exists for navigation, configuration, API errors, and critical dashboard/channel/activity flows.
+- [ ] Basic accessibility checklist is satisfied for MVP screens and controls.
+- [ ] Runtime validation covers all MVP endpoints and prevents malformed responses from crashing the UI.
+- [ ] Offline and poor-connectivity states show clear banners, stale indicators, and retry affordances.
+- [ ] Security checklist confirms token safety, safe error details, safe external links, config reset behavior, and no internal-token usage.
+- [ ] Performance audit confirms list behavior, refresh intervals, and rerender/request patterns are acceptable for MVP.
+- [ ] MVP can be demoed reliably against local and staging backend environments.
+
+## Open Questions For Later Phases
+
+- Which observability/error-reporting platform should be added after MVP?
+- Should the app support queued offline writes or background sync in a future release?
+- What level of automated accessibility and visual regression testing is appropriate after MVP?
+- Should future releases introduce stronger enterprise security controls such as managed configuration, device posture, or single sign-on?
