@@ -3,12 +3,20 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { SettingsScreen } from '../screens/SettingsScreen';
 
+jest.mock('../api/statusTestClient', () => ({
+  testStatusConnection: jest.fn(),
+}));
+
 jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
 }));
 
 const { useConfigStatus } = jest.requireMock('../config/ConfigStatusContext') as {
   useConfigStatus: jest.Mock;
+};
+
+const { testStatusConnection } = jest.requireMock('../api/statusTestClient') as {
+  testStatusConnection: jest.Mock;
 };
 
 const navigation = {
@@ -24,9 +32,7 @@ describe('SettingsScreen', () => {
   it('activates config after successful save and test', async () => {
     const activateConfig = jest.fn(async () => undefined);
     useConfigStatus.mockReturnValue({ activateConfig, clearConfig: jest.fn(), config: null });
-    global.fetch = jest.fn(async () =>
-      ({ ok: true, json: async () => ({ environment: 'mock', ready: true }) }) as Response,
-    ) as jest.Mock;
+    testStatusConnection.mockResolvedValue({ environment: 'mock', ready: true });
 
     const queryClient = new QueryClient();
 
@@ -52,7 +58,7 @@ describe('SettingsScreen', () => {
   it('shows error and does not activate config when /status fails', async () => {
     const activateConfig = jest.fn(async () => undefined);
     useConfigStatus.mockReturnValue({ activateConfig, clearConfig: jest.fn(), config: null });
-    global.fetch = jest.fn(async () => ({ ok: false, status: 401, json: async () => ({ detail: 'bad token' }) }) as Response) as jest.Mock;
+    testStatusConnection.mockRejectedValue(new Error('Authentication failed (401). Verify API base URL and mobile token in Settings.'));
 
     const queryClient = new QueryClient();
     render(
@@ -74,7 +80,7 @@ describe('SettingsScreen', () => {
   it('clears local config when pressing Clear Config', async () => {
     const clearConfig = jest.fn(async () => undefined);
     useConfigStatus.mockReturnValue({ activateConfig: jest.fn(), clearConfig, config: null });
-    global.fetch = jest.fn() as jest.Mock;
+    testStatusConnection.mockResolvedValue({ environment: 'mock', ready: true });
 
     const queryClient = new QueryClient();
     render(
