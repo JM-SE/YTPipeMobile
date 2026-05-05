@@ -33,7 +33,7 @@ export function AppNavigator({ onOpenSettings }: Props) {
           ),
         })}
       />
-      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings (Phase 1 placeholder)' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>
   );
 }

@@ -17,7 +17,7 @@ export function SetupNavigator() {
       }}
     >
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ title: 'YTPipe Mobile' }} />
-      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings (Phase 1 placeholder)' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>
   );
 }

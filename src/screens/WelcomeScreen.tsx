@@ -1,7 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { useConfigStatus } from '../config/ConfigStatusContext';
 import { ScreenShell } from '../components/ScreenShell';
 import { SetupStackParamList } from '../navigation/types';
 import { colors, spacing, typography } from '../theme/tokens';
@@ -9,8 +8,6 @@ import { colors, spacing, typography } from '../theme/tokens';
 type Props = NativeStackScreenProps<SetupStackParamList, 'Welcome'>;
 
 export function WelcomeScreen({ navigation }: Props) {
-  const { markPresent } = useConfigStatus();
-
   return (
     <ScreenShell
       title="Welcome to YTPipe Mobile"
@@ -20,10 +17,6 @@ export function WelcomeScreen({ navigation }: Props) {
 
       <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Settings')}>
         <Text style={styles.primaryButtonText}>Go to setup</Text>
-      </Pressable>
-
-      <Pressable style={styles.secondaryButton} onPress={markPresent}>
-        <Text style={styles.secondaryButtonText}>Temporary dev: Enter app shell</Text>
       </Pressable>
     </ScreenShell>
   );
@@ -44,17 +37,5 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: colors.textPrimary,
     fontWeight: '700',
-  },
-  secondaryButton: {
-    borderColor: colors.border,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  secondaryButtonText: {
-    color: colors.textSecondary,
-    fontSize: typography.caption,
   },
 });
