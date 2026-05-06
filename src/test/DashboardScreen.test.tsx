@@ -6,12 +6,22 @@ jest.mock('../api/useStatusQuery', () => ({
   useStatusQuery: jest.fn(),
 }));
 
+jest.mock('../api/useManualActionsMutations', () => ({
+  useSyncSubscriptionsMutation: jest.fn(),
+  useRunPollMutation: jest.fn(),
+}));
+
 jest.mock('@react-navigation/bottom-tabs', () => ({
   useBottomTabBarHeight: () => 56,
 }));
 
 const { useStatusQuery } = jest.requireMock('../api/useStatusQuery') as {
   useStatusQuery: jest.Mock;
+};
+
+const { useSyncSubscriptionsMutation, useRunPollMutation } = jest.requireMock('../api/useManualActionsMutations') as {
+  useSyncSubscriptionsMutation: jest.Mock;
+  useRunPollMutation: jest.Mock;
 };
 
 const baseStatus = {
@@ -49,9 +59,11 @@ const baseStatus = {
 describe('DashboardScreen phase 3', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useSyncSubscriptionsMutation.mockReturnValue({ isPending: false, mutate: jest.fn() });
+    useRunPollMutation.mockReturnValue({ isPending: false, mutate: jest.fn() });
   });
 
-  it('renders dashboard cards and phase-5 placeholders', () => {
+  it('renders dashboard cards and manual actions', () => {
     useStatusQuery.mockReturnValue({
       data: baseStatus,
       error: null,
@@ -68,9 +80,9 @@ describe('DashboardScreen phase 3', () => {
     expect(screen.queryByText('Email/delivery summary')).toBeNull();
     expect(screen.getByText('Quota/safety')).toBeTruthy();
     expect(screen.getByText('Channel summary')).toBeTruthy();
-    expect(screen.getByText('Quick actions')).toBeTruthy();
-    expect(screen.getByText(/Sync \(Phase 5\)/i)).toBeTruthy();
-    expect(screen.getByText(/Poll \(Phase 5\)/i)).toBeTruthy();
+    expect(screen.getByText('Manual actions')).toBeTruthy();
+    expect(screen.getByLabelText('Sync subscriptions')).toBeTruthy();
+    expect(screen.getByLabelText('Run poll')).toBeTruthy();
   });
 
   it('wires refresh actions to refetch', () => {
