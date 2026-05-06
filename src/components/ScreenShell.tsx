@@ -35,6 +35,7 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
   },
   content: {
+    flex: 1,
     gap: spacing.md,
   },
 });

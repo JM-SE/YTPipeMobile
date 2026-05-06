@@ -1,16 +1,67 @@
-import { Text } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { ConnectionDiagnosticCard } from '../components/ConnectionDiagnosticCard';
+import { useStatusQuery } from '../api/useStatusQuery';
+import { ChannelSummaryCard } from '../components/dashboard/ChannelSummaryCard';
+import { DashboardQuickActionsCard } from '../components/dashboard/DashboardQuickActionsCard';
+import { EmailSummaryCard } from '../components/dashboard/EmailSummaryCard';
+import { PollingSummaryCard } from '../components/dashboard/PollingSummaryCard';
+import { QuotaSummaryCard } from '../components/dashboard/QuotaSummaryCard';
+import { ServiceReadinessCard } from '../components/dashboard/ServiceReadinessCard';
 import { ScreenShell } from '../components/ScreenShell';
+import { spacing } from '../theme/tokens';
 
 export function DashboardScreen() {
+  const { data, error, isLoading, isFetching, isRefetchError, refetch } = useStatusQuery();
+  const tabBarHeight = useBottomTabBarHeight();
+
   return (
     <ScreenShell
       title="Dashboard"
-      subtitle="Phase 2 connection diagnostic. Full status dashboard arrives in Phase 3."
+      subtitle="Service readiness, polling, quota, and channel status from /status."
     >
-      <ConnectionDiagnosticCard />
-      <Text style={{ color: '#9AA7CC' }}>Manual actions (Sync/Poll) will live here in Phase 5.</Text>
+      <ScrollView
+        style={styles.scroll}
+        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => void refetch()} />}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + spacing.xl }]}
+      >
+        <ServiceReadinessCard
+          statusData={data ?? null}
+          error={error ?? null}
+          isLoading={isLoading}
+          isStaleFailure={Boolean(data) && isRefetchError}
+          onRetry={() => void refetch()}
+          isFetching={isFetching}
+        />
+
+        {data ? (
+          <>
+            <PollingSummaryCard status={data} />
+            {DASHBOARD_FEATURE_FLAGS.showEmailDelivery ? <EmailSummaryCard status={data} /> : null}
+            <QuotaSummaryCard status={data} />
+            <ChannelSummaryCard status={data} />
+            <DashboardQuickActionsCard />
+          </>
+        ) : (
+          <Text style={styles.loadingHint}>Status summaries appear after successful /status response.</Text>
+        )}
+      </ScrollView>
     </ScreenShell>
   );
 }
+
+const DASHBOARD_FEATURE_FLAGS = {
+  showEmailDelivery: false,
+} as const;
+
+const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    gap: spacing.md,
+  },
+  loadingHint: {
+    color: '#9AA7CC',
+  },
+});

@@ -60,6 +60,6 @@ describe('ConnectionDiagnosticCard', () => {
     });
 
     render(<ConnectionDiagnosticCard />);
-    expect(screen.getByText(/showing stale status/i)).toBeTruthy();
+    expect(screen.getByText(/showing stale dashboard data/i)).toBeTruthy();
   });
 });

@@ -43,6 +43,15 @@
 - Rationale: This supports learning fundamentals and avoids premature design-system dependency.
 - Future: Evaluate React Native Paper after core flows are working.
 
+## Tab Bar Icon Strategy (Temporary vs Enterprise)
+
+- Current MVP Decision: Keep bottom tabs label-only temporarily to avoid instability from the observed `@expo/vector-icons` / Metro module-resolution issue.
+- Reason: The immediate priority is a stable Phase 3 build and predictable local/dev behavior.
+- Follow-up: Replace this temporary fallback with an enterprise-quality icon strategy using the dedicated design and implementation specs.
+- References:
+  - `specs/mobile_tab_icons_design.spec.md`
+  - `specs/implementation/mobile_tab_icons_implementation.spec.md`
+
 ## Testing Tooling
 
 - Decision: Use Jest + React Native Testing Library for unit/component tests.
