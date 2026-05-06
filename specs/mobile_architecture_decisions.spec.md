@@ -50,7 +50,7 @@
 - Follow-up: Replace this temporary fallback with an enterprise-quality icon strategy using the dedicated design and implementation specs.
 - References:
   - `specs/mobile_tab_icons_design.spec.md`
-  - `specs/implementation/mobile_tab_icons_implementation.spec.md`
+  - `specs/implementation/mobile_phase_10_tab_icons_implementation.spec.md`
 
 ## Testing Tooling
 
