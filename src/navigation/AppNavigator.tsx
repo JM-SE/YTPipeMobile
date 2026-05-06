@@ -2,6 +2,7 @@ import { Pressable, Text } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { ChannelDetailScreen } from '../screens/ChannelDetailScreen';
 import { AppTabsNavigator } from './AppTabsNavigator';
 import { AppStackParamList } from './types';
 import { colors } from '../theme/tokens';
@@ -34,6 +35,7 @@ export function AppNavigator({ onOpenSettings }: Props) {
         })}
       />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="ChannelDetail" component={ChannelDetailScreen} options={{ title: 'Channel detail' }} />
     </Stack.Navigator>
   );
 }

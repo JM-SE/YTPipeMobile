@@ -13,6 +13,7 @@ export function AppTabsNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarIcon: () => null,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,

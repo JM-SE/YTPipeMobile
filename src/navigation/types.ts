@@ -1,3 +1,5 @@
+import type { Channel } from '../api/types';
+
 export type SetupStackParamList = {
   Welcome: undefined;
   Settings: undefined;
@@ -12,4 +14,5 @@ export type AppTabsParamList = {
 export type AppStackParamList = {
   MainTabs: undefined;
   Settings: undefined;
+  ChannelDetail: { channel: Channel };
 };
