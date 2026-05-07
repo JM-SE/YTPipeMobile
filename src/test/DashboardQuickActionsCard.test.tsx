@@ -8,9 +8,17 @@ jest.mock('../api/useManualActionsMutations', () => ({
   useRunPollMutation: jest.fn(),
 }));
 
+jest.mock('../connectivity/ConnectivityContext', () => ({
+  useConnectivityStatus: jest.fn(),
+}));
+
 const { useSyncSubscriptionsMutation, useRunPollMutation } = jest.requireMock('../api/useManualActionsMutations') as {
   useSyncSubscriptionsMutation: jest.Mock;
   useRunPollMutation: jest.Mock;
+};
+
+const { useConnectivityStatus } = jest.requireMock('../connectivity/ConnectivityContext') as {
+  useConnectivityStatus: jest.Mock;
 };
 
 function mockMutations(params: {
@@ -32,6 +40,7 @@ function mockMutations(params: {
 describe('DashboardQuickActionsCard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useConnectivityStatus.mockReturnValue({ isOffline: false });
     mockMutations();
   });
 
@@ -52,6 +61,16 @@ describe('DashboardQuickActionsCard', () => {
 
     expect(screen.getByLabelText('Sync subscriptions')).toBeDisabled();
     expect(screen.getByLabelText('Run poll')).toBeDisabled();
+  });
+
+  it('disables both buttons while offline', () => {
+    useConnectivityStatus.mockReturnValue({ isOffline: true });
+
+    render(<DashboardQuickActionsCard />);
+
+    expect(screen.getByLabelText('Sync subscriptions')).toBeDisabled();
+    expect(screen.getByLabelText('Run poll')).toBeDisabled();
+    expect(screen.getByText('Manual actions are disabled while offline.')).toBeTruthy();
   });
 
   it('shows compact sync success feedback', async () => {

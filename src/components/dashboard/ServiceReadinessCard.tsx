@@ -14,9 +14,10 @@ type Props = {
   isStaleFailure: boolean;
   onRetry: () => void;
   isFetching: boolean;
+  isOffline?: boolean;
 };
 
-export function ServiceReadinessCard({ statusData, error, isLoading, isStaleFailure, onRetry, isFetching }: Props) {
+export function ServiceReadinessCard({ statusData, error, isLoading, isStaleFailure, onRetry, isFetching, isOffline = false }: Props) {
   const [showDetails, setShowDetails] = useState(false);
   const hasData = Boolean(statusData);
   const ready = statusData?.ready ?? false;
@@ -63,7 +64,16 @@ export function ServiceReadinessCard({ statusData, error, isLoading, isStaleFail
         </>
       ) : null}
 
-      <Pressable onPress={onRetry} disabled={isFetching} style={styles.refreshButton} accessibilityLabel="Retry status">
+      {isOffline ? <Text style={styles.warning}>Refresh is disabled while offline.</Text> : null}
+
+      <Pressable
+        onPress={onRetry}
+        disabled={isFetching || isOffline}
+        style={[styles.refreshButton, isOffline ? styles.disabled : null]}
+        accessibilityRole="button"
+        accessibilityLabel="Retry status"
+        accessibilityState={{ disabled: isFetching || isOffline }}
+      >
         <Text style={styles.refreshButtonText}>{isFetching ? 'Refreshing…' : 'Refresh'}</Text>
       </Pressable>
     </DashboardCard>
@@ -122,5 +132,8 @@ const styles = StyleSheet.create({
   refreshButtonText: {
     color: colors.textPrimary,
     fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });

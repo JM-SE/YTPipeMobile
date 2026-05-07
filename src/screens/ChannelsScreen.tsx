@@ -14,6 +14,7 @@ import { ChannelFilterTabs } from '../components/channels/ChannelFilterTabs';
 import { ChannelListItem } from '../components/channels/ChannelListItem';
 import { ScreenShell } from '../components/ScreenShell';
 import { useConfigStatus } from '../config/ConfigStatusContext';
+import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { AppStackParamList } from '../navigation/types';
 import { acknowledgeChannelEducation, hasAcknowledgedChannelEducation } from '../storage/channelEducationStorage';
@@ -27,6 +28,7 @@ export function ChannelsScreen() {
   const navigation = useNavigation<Navigation>();
   const tabBarHeight = useBottomTabBarHeight();
   const { config } = useConfigStatus();
+  const { isOffline } = useConnectivityStatus();
   const [filter, setFilter] = useState<MonitoringFilter>('monitored');
   const [search, setSearch] = useState('');
   const [educationAcknowledged, setEducationAcknowledged] = useState(false);
@@ -56,6 +58,8 @@ export function ChannelsScreen() {
   const showEmpty = !query.isLoading && channels.length === 0 && !query.error;
 
   const runToggle = (channel: Channel, nextValue: boolean) => {
+    if (isOffline) return;
+
     setLastError(null);
     mutation.mutate(
       { channelId: channel.channel_id, isMonitored: nextValue },
@@ -92,9 +96,9 @@ export function ChannelsScreen() {
         data={channels}
         keyExtractor={(channel) => String(channel.channel_id)}
         renderItem={({ item }) => (
-          <ChannelListItem
-            channel={item}
-            disabled={mutation.isPending && pendingChannelId === item.channel_id}
+            <ChannelListItem
+              channel={item}
+              disabled={isOffline || (mutation.isPending && pendingChannelId === item.channel_id)}
             onPress={(channel) => navigation.navigate('ChannelDetail', { channel })}
             onToggle={handleToggle}
           />
@@ -113,6 +117,7 @@ export function ChannelsScreen() {
               accessibilityLabel="Search channels"
             />
             <Text style={styles.count}>{total} channels found</Text>
+            {isOffline ? <Text style={styles.message}>Monitoring toggles and refresh are disabled while offline.</Text> : null}
             <ChannelErrorBanner error={lastError ?? query.error ?? null} onDismiss={() => setLastError(null)} />
             {showInitialLoading ? <Text style={styles.message}>Loading channels…</Text> : null}
           </View>
@@ -129,9 +134,9 @@ export function ChannelsScreen() {
         ListFooterComponent={
           query.isFetchingNextPage ? <Text style={styles.message}>Loading more channels…</Text> : null
         }
-        refreshControl={<RefreshControl refreshing={query.isFetching && !query.isFetchingNextPage} onRefresh={query.refetch} />}
+        refreshControl={<RefreshControl refreshing={query.isFetching && !query.isFetchingNextPage && !isOffline} onRefresh={() => { if (!isOffline) void query.refetch(); }} />}
         onEndReached={() => {
-          if (query.hasNextPage && !query.isFetchingNextPage) {
+          if (!isOffline && query.hasNextPage && !query.isFetchingNextPage) {
             query.fetchNextPage();
           }
         }}

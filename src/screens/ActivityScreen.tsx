@@ -8,10 +8,12 @@ import { ActivityListItem } from '../components/activity/ActivityListItem';
 import { ActivityStatusFilterTabs } from '../components/activity/ActivityStatusFilterTabs';
 import { filterAwareEmptyMessage } from '../components/activity/activityFormatters';
 import { ScreenShell } from '../components/ScreenShell';
+import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
 import { colors, spacing, typography } from '../theme/tokens';
 
 export function ActivityScreen() {
   const tabBarHeight = useBottomTabBarHeight();
+  const { isOffline } = useConnectivityStatus();
   const [filter, setFilter] = useState<ActivityStatusFilter>('all');
   const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null);
   const [linkErrors, setLinkErrors] = useState<Record<number, string>>({});
@@ -82,6 +84,7 @@ export function ActivityScreen() {
               </View>
             ) : null}
             {showInitialLoading ? <Text style={styles.message}>Loading activity…</Text> : null}
+            {isOffline ? <Text style={styles.message}>Activity refresh and pagination are paused while offline.</Text> : null}
             {showFullError ? (
               <View style={styles.error} accessibilityRole="alert">
                 <Text style={styles.errorTitle}>Activity request failed</Text>
@@ -92,9 +95,9 @@ export function ActivityScreen() {
         }
         ListEmptyComponent={showEmpty ? <Text style={styles.message}>{filterAwareEmptyMessage(filter)}</Text> : null}
         ListFooterComponent={isFetchingNextPage ? <Text style={styles.message}>Loading more activity…</Text> : null}
-        refreshControl={<RefreshControl refreshing={isFetching && !isFetchingNextPage} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isFetching && !isFetchingNextPage && !isOffline} onRefresh={() => { if (!isOffline) void refetch(); }} />}
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
+          if (!isOffline && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
           }
         }}

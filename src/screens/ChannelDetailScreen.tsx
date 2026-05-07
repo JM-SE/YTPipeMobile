@@ -6,6 +6,7 @@ import type { ApiError } from '../api/errors';
 import { useUpdateChannelMonitoringMutation } from '../api/useUpdateChannelMonitoringMutation';
 import { ChannelErrorBanner } from '../components/channels/ChannelErrorBanner';
 import { ScreenShell } from '../components/ScreenShell';
+import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, spacing, typography } from '../theme/tokens';
 
@@ -15,9 +16,12 @@ export function ChannelDetailScreen({ route }: Props) {
   const { channel } = route.params;
   const [isMonitored, setIsMonitored] = useState(channel.is_monitored);
   const [lastError, setLastError] = useState<ApiError | null>(null);
+  const { isOffline } = useConnectivityStatus();
   const mutation = useUpdateChannelMonitoringMutation();
 
   const handleToggle = (nextValue: boolean) => {
+    if (isOffline) return;
+
     setLastError(null);
     setIsMonitored(nextValue);
     mutation.mutate(
@@ -45,11 +49,12 @@ export function ChannelDetailScreen({ route }: Props) {
           </View>
           <Switch
             value={isMonitored}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || isOffline}
             onValueChange={handleToggle}
             accessibilityLabel={`${isMonitored ? 'Disable' : 'Enable'} monitoring for ${channel.title}`}
           />
         </View>
+        {isOffline ? <Text style={styles.description}>Monitoring changes are disabled while offline.</Text> : null}
       </View>
 
       {channel.latest_detected_video ? (

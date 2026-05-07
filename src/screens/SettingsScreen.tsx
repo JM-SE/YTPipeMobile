@@ -15,8 +15,10 @@ type AppProps = NativeStackScreenProps<AppStackParamList, 'Settings'>;
 type Props = SetupProps | AppProps;
 
 export function SettingsScreen({ navigation }: Props) {
-  const { control, errors, showToken, saving, clearing, feedback, onSaveAndTest, onClearConfig, toggleTokenVisibility } =
+  const { control, errors, showToken, saving, clearing, isOffline, feedback, onSaveAndTest, onClearConfig, toggleTokenVisibility } =
     useSettingsController({ navigation });
+
+  const saveDisabled = saving || clearing || isOffline;
 
   return (
     <ScreenShell title="Settings" subtitle="Configure backend URL and mobile API token.">
@@ -44,14 +46,20 @@ export function SettingsScreen({ navigation }: Props) {
       <FeedbackBanner feedback={feedback} />
 
       <Pressable
-        style={[styles.primaryButton, (saving || clearing) ? styles.disabledButton : null]}
+        accessibilityRole="button"
+        accessibilityLabel="Save and Test settings"
+        accessibilityState={{ disabled: saveDisabled }}
+        style={[styles.primaryButton, saveDisabled ? styles.disabledButton : null]}
         onPress={onSaveAndTest}
-        disabled={saving || clearing}
+        disabled={saveDisabled}
       >
-        <Text style={styles.primaryButtonText}>{saving ? 'Saving and testing...' : 'Save and Test'}</Text>
+        <Text style={styles.primaryButtonText}>{saving ? 'Saving and testing...' : isOffline ? 'Offline - reconnect to test' : 'Save and Test'}</Text>
       </Pressable>
 
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Clear Config"
+        accessibilityState={{ disabled: saving || clearing }}
         style={[styles.secondaryButton, (saving || clearing) ? styles.disabledButton : null]}
         onPress={onClearConfig}
         disabled={saving || clearing}

@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ConnectivityBanner } from './ConnectivityBanner';
 import { colors, spacing, typography } from '../theme/tokens';
 
 type Props = PropsWithChildren<{
@@ -13,6 +14,7 @@ export function ScreenShell({ title, subtitle, children }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <ConnectivityBanner />
       <View style={styles.content}>{children}</View>
     </View>
   );

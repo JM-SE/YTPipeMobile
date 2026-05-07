@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ApiError } from '../../api/errors';
 import { useRunPollMutation, useSyncSubscriptionsMutation } from '../../api/useManualActionsMutations';
 import type { PollResult, SyncResult } from '../../api/types';
+import { useConnectivityStatus } from '../../connectivity/ConnectivityContext';
 import { colors, spacing, typography } from '../../theme/tokens';
 import { DashboardCard } from './DashboardCard';
 import {
@@ -29,9 +30,11 @@ type ResultState =
 export function DashboardQuickActionsCard() {
   const syncMutation = useSyncSubscriptionsMutation();
   const pollMutation = useRunPollMutation();
+  const { isOffline } = useConnectivityStatus();
   const [activeAction, setActiveAction] = useState<ManualAction | null>(null);
   const [result, setResult] = useState<ResultState>(null);
   const isRunning = syncMutation.isPending || pollMutation.isPending;
+  const actionsDisabled = isRunning || isOffline;
 
   const runSync = () => {
     setActiveAction(ACTION.SYNC);
@@ -59,15 +62,16 @@ export function DashboardQuickActionsCard() {
         <ActionButton
           label="Sync subscriptions"
           accessibilityLabel="Sync subscriptions"
-          disabled={isRunning}
+          disabled={actionsDisabled}
           onPress={runSync}
         />
-        <ActionButton label="Run poll" accessibilityLabel="Run poll" disabled={isRunning} onPress={runPoll} />
+        <ActionButton label="Run poll" accessibilityLabel="Run poll" disabled={actionsDisabled} onPress={runPoll} />
       </View>
 
       {isRunning ? (
         <Text style={styles.running}>{activeAction === ACTION.SYNC ? 'Sync subscriptions is running…' : 'Run poll is running…'}</Text>
       ) : null}
+      {isOffline ? <Text style={styles.running}>Manual actions are disabled while offline.</Text> : null}
 
       <View style={styles.educationGroup}>
         <Text style={styles.info}>

@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { testStatusConnection } from '../../api/statusTestClient';
 import { useConfigStatus } from '../../config/ConfigStatusContext';
 import { ConfigFormValues, configFormSchema, normalizeApiBaseUrl, normalizeToken } from '../../config/configSchema';
+import { useConnectivityStatus } from '../../connectivity/ConnectivityContext';
 import { AppStackParamList, SetupStackParamList } from '../../navigation/types';
 import { SettingsFeedback } from './types';
 
@@ -19,6 +20,7 @@ type Params = {
 export function useSettingsController({ navigation }: Params) {
   const queryClient = useQueryClient();
   const { activateConfig, clearConfig, config } = useConfigStatus();
+  const { isOffline } = useConnectivityStatus();
   const [showToken, setShowToken] = useState(false);
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -48,6 +50,11 @@ export function useSettingsController({ navigation }: Params) {
   }, []);
 
   const onSaveAndTest = handleSubmit(async (values) => {
+    if (isOffline) {
+      setFeedback({ type: 'error', message: 'Cannot Save and Test while offline. Reconnect and try again.' });
+      return;
+    }
+
     setSaving(true);
     setFeedback(null);
 
@@ -100,6 +107,7 @@ export function useSettingsController({ navigation }: Params) {
     showToken,
     saving,
     clearing,
+    isOffline,
     feedback,
     onSaveAndTest,
     onClearConfig,

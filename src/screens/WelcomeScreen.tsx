@@ -13,9 +13,9 @@ export function WelcomeScreen({ navigation }: Props) {
       title="Welcome to YTPipe Mobile"
       subtitle="Personal admin companion app. Configure API base URL and mobile token to continue."
     >
-      <Text style={styles.note}>This app never uses INTERNAL_API_BEARER_TOKEN.</Text>
+      <Text style={styles.note}>This app only uses your mobile API token and never uses internal automation credentials.</Text>
 
-      <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Settings')}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Go to setup" style={styles.primaryButton} onPress={() => navigation.navigate('Settings')}>
         <Text style={styles.primaryButtonText}>Go to setup</Text>
       </Pressable>
     </ScreenShell>

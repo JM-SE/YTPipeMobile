@@ -11,44 +11,64 @@ import type {
   UpdateChannelMonitoringPayload,
   UpdateChannelMonitoringResponse,
 } from './types';
+import { parseApiResponse } from './validation/parseResponse';
+import {
+  activityResponseSchema,
+  channelsResponseSchema,
+  pollResultResponseSchema,
+  statusResponseSchema,
+  syncResultSchema,
+  updateChannelMonitoringResponseSchema,
+} from './validation/schemas';
 
-export function getStatus(config: ApiClientConfig): Promise<StatusResponse> {
-  return apiRequest<StatusResponse>(config, '/status', { method: 'GET' });
+export async function getStatus(config: ApiClientConfig): Promise<StatusResponse> {
+  const response = await apiRequest<unknown>(config, '/status', { method: 'GET' });
+  return parseApiResponse(statusResponseSchema, response, 'GET /status', config.mobileApiToken);
 }
 
-export function getChannels(config: ApiClientConfig, query: ChannelsQuery = {}): Promise<ChannelsResponse> {
-  return apiRequest<ChannelsResponse>(config, '/internal/channels', {
+export async function getChannels(config: ApiClientConfig, query: ChannelsQuery = {}): Promise<ChannelsResponse> {
+  const response = await apiRequest<unknown>(config, '/internal/channels', {
     method: 'GET',
     query: query as Record<string, string | number | boolean | undefined>,
   });
+  return parseApiResponse(channelsResponseSchema, response, 'GET /internal/channels', config.mobileApiToken);
 }
 
-export function updateChannelMonitoring(
+export async function updateChannelMonitoring(
   config: ApiClientConfig,
   channelId: number,
   payload: UpdateChannelMonitoringPayload,
 ): Promise<UpdateChannelMonitoringResponse> {
-  return apiRequest<UpdateChannelMonitoringResponse>(config, `/internal/channels/${channelId}/monitoring`, {
+  const response = await apiRequest<unknown>(config, `/internal/channels/${channelId}/monitoring`, {
     method: 'PATCH',
     body: payload,
   });
+  return parseApiResponse(
+    updateChannelMonitoringResponseSchema,
+    response,
+    'PATCH /internal/channels/{id}/monitoring',
+    config.mobileApiToken,
+  );
 }
 
-export function syncSubscriptions(config: ApiClientConfig): Promise<SyncResult> {
-  return apiRequest<SyncResult>(config, '/internal/subscriptions/sync', {
+export async function syncSubscriptions(config: ApiClientConfig): Promise<SyncResult> {
+  const response = await apiRequest<unknown>(config, '/internal/subscriptions/sync', {
     method: 'POST',
   });
+  return parseApiResponse(syncResultSchema, response, 'POST /internal/subscriptions/sync', config.mobileApiToken);
 }
 
-export function runPoll(config: ApiClientConfig): Promise<PollResult> {
-  return apiRequest<PollResult>(config, '/internal/run-poll', {
+export async function runPoll(config: ApiClientConfig): Promise<PollResult> {
+  const response = await apiRequest<unknown>(config, '/internal/run-poll', {
     method: 'POST',
   });
+  return parseApiResponse(pollResultResponseSchema, response, 'POST /internal/run-poll', config.mobileApiToken);
 }
 
-export function getActivity(config: ApiClientConfig, query: ActivityQuery = {}): Promise<ActivityResponse> {
-  return apiRequest<ActivityResponse>(config, '/internal/activity', {
+export async function getActivity(config: ApiClientConfig, query: ActivityQuery = {}): Promise<ActivityResponse> {
+  const response = await apiRequest<unknown>(config, '/internal/activity', {
     method: 'GET',
     query: query as Record<string, string | number | boolean | undefined>,
   });
+  return parseApiResponse(activityResponseSchema, response, 'GET /internal/activity', config.mobileApiToken);
 }

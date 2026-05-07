@@ -11,12 +11,20 @@ jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
 }));
 
+jest.mock('../connectivity/ConnectivityContext', () => ({
+  useConnectivityStatus: jest.fn(),
+}));
+
 const { useConfigStatus } = jest.requireMock('../config/ConfigStatusContext') as {
   useConfigStatus: jest.Mock;
 };
 
 const { testStatusConnection } = jest.requireMock('../api/statusTestClient') as {
   testStatusConnection: jest.Mock;
+};
+
+const { useConnectivityStatus } = jest.requireMock('../connectivity/ConnectivityContext') as {
+  useConnectivityStatus: jest.Mock;
 };
 
 const navigation = {
@@ -27,6 +35,7 @@ const navigation = {
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useConnectivityStatus.mockReturnValue({ isOffline: false });
   });
 
   it('activates config after successful save and test', async () => {
@@ -94,5 +103,21 @@ describe('SettingsScreen', () => {
     await waitFor(() => {
       expect(clearConfig).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('disables Save and Test while offline but keeps local Clear Config available', () => {
+    useConnectivityStatus.mockReturnValue({ isOffline: true });
+    useConfigStatus.mockReturnValue({ activateConfig: jest.fn(), clearConfig: jest.fn(), config: null });
+
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SettingsScreen navigation={navigation} route={{ key: 'Settings', name: 'Settings' } as any} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByLabelText('Save and Test settings')).toBeDisabled();
+    expect(screen.getByText('Offline - reconnect to test')).toBeTruthy();
+    expect(screen.getByLabelText('Clear Config')).not.toBeDisabled();
   });
 });

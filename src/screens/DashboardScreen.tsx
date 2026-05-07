@@ -9,10 +9,12 @@ import { PollingSummaryCard } from '../components/dashboard/PollingSummaryCard';
 import { QuotaSummaryCard } from '../components/dashboard/QuotaSummaryCard';
 import { ServiceReadinessCard } from '../components/dashboard/ServiceReadinessCard';
 import { ScreenShell } from '../components/ScreenShell';
+import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
 import { spacing } from '../theme/tokens';
 
 export function DashboardScreen() {
   const { data, error, isLoading, isFetching, isRefetchError, refetch } = useStatusQuery();
+  const { isOffline } = useConnectivityStatus();
   const tabBarHeight = useBottomTabBarHeight();
 
   return (
@@ -22,7 +24,7 @@ export function DashboardScreen() {
     >
       <ScrollView
         style={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => void refetch()} />}
+        refreshControl={<RefreshControl refreshing={isFetching && !isOffline} onRefresh={() => { if (!isOffline) void refetch(); }} />}
         contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + spacing.xl }]}
       >
         <ServiceReadinessCard
@@ -32,6 +34,7 @@ export function DashboardScreen() {
           isStaleFailure={Boolean(data) && isRefetchError}
           onRetry={() => void refetch()}
           isFetching={isFetching}
+          isOffline={isOffline}
         />
 
         {data ? (
