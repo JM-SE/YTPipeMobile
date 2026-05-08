@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { ApiError } from '../api/errors';
-import { useUpdateChannelMonitoringMutation } from '../api/useUpdateChannelMonitoringMutation';
+import { ChannelEducationModal } from '../components/channels/ChannelEducationModal';
 import { ChannelErrorBanner } from '../components/channels/ChannelErrorBanner';
 import { ScreenShell } from '../components/ScreenShell';
-import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
+import { useChannelMonitoringToggle } from '../hooks/useChannelMonitoringToggle';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, spacing, typography } from '../theme/tokens';
 
@@ -15,22 +14,15 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ChannelDetail'>;
 export function ChannelDetailScreen({ route }: Props) {
   const { channel } = route.params;
   const [isMonitored, setIsMonitored] = useState(channel.is_monitored);
-  const [lastError, setLastError] = useState<ApiError | null>(null);
-  const { isOffline } = useConnectivityStatus();
-  const mutation = useUpdateChannelMonitoringMutation();
+  const monitoringToggle = useChannelMonitoringToggle();
 
   const handleToggle = (nextValue: boolean) => {
-    if (isOffline) return;
-
-    setLastError(null);
-    setIsMonitored(nextValue);
-    mutation.mutate(
-      { channelId: channel.channel_id, isMonitored: nextValue },
+    monitoringToggle.requestToggle(
+      { ...channel, is_monitored: isMonitored },
+      nextValue,
       {
-        onError: (error) => {
-          setIsMonitored(!nextValue);
-          setLastError(error);
-        },
+        onOptimistic: setIsMonitored,
+        onRollback: setIsMonitored,
       },
     );
   };
@@ -47,14 +39,14 @@ export function ChannelDetailScreen({ route }: Props) {
                 : 'This channel is catalog-only until monitoring is enabled.'}
             </Text>
           </View>
-          <Switch
+            <Switch
             value={isMonitored}
-            disabled={mutation.isPending || isOffline}
+            disabled={monitoringToggle.isPending || monitoringToggle.isOffline}
             onValueChange={handleToggle}
             accessibilityLabel={`${isMonitored ? 'Disable' : 'Enable'} monitoring for ${channel.title}`}
           />
         </View>
-        {isOffline ? <Text style={styles.description}>Monitoring changes are disabled while offline.</Text> : null}
+        {monitoringToggle.isOffline ? <Text style={styles.description}>Monitoring changes are disabled while offline.</Text> : null}
       </View>
 
       {channel.latest_detected_video ? (
@@ -78,7 +70,13 @@ export function ChannelDetailScreen({ route }: Props) {
         </Text>
       </View>
 
-      <ChannelErrorBanner error={lastError} onDismiss={() => setLastError(null)} />
+      <ChannelErrorBanner error={monitoringToggle.lastError} onDismiss={monitoringToggle.clearError} />
+      <ChannelEducationModal
+        visible={Boolean(monitoringToggle.educationChannel)}
+        channelTitle={monitoringToggle.educationChannel?.title}
+        onCancel={monitoringToggle.cancelEducation}
+        onConfirm={monitoringToggle.confirmEducation}
+      />
     </ScreenShell>
   );
 }

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Linking, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { ActivityItem, ActivityStatusFilter } from '../api/types';
 import { useActivityQuery } from '../api/useActivityQuery';
@@ -8,11 +10,16 @@ import { ActivityListItem } from '../components/activity/ActivityListItem';
 import { ActivityStatusFilterTabs } from '../components/activity/ActivityStatusFilterTabs';
 import { filterAwareEmptyMessage } from '../components/activity/activityFormatters';
 import { isAllowedYouTubeUrl, YOUTUBE_LINK_ERROR } from '../components/activity/youtubeLinks';
+import { AuthConfigErrorBanner } from '../components/AuthConfigErrorBanner';
 import { ScreenShell } from '../components/ScreenShell';
 import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
+import type { AppStackParamList } from '../navigation/types';
 import { colors, spacing, typography } from '../theme/tokens';
 
+type Navigation = NativeStackNavigationProp<AppStackParamList>;
+
 export function ActivityScreen() {
+  const navigation = useNavigation<Navigation>();
   const tabBarHeight = useBottomTabBarHeight();
   const { isOffline } = useConnectivityStatus();
   const [filter, setFilter] = useState<ActivityStatusFilter>('all');
@@ -88,10 +95,14 @@ export function ActivityScreen() {
             {showInitialLoading ? <Text style={styles.message}>Loading activity…</Text> : null}
             {isOffline ? <Text style={styles.message}>Activity refresh and pagination are paused while offline.</Text> : null}
             {showFullError ? (
-              <View style={styles.error} accessibilityRole="alert">
-                <Text style={styles.errorTitle}>Activity request failed</Text>
-                <Text style={styles.message}>{error.message}</Text>
-              </View>
+              error?.kind === 'auth' ? (
+                <AuthConfigErrorBanner error={error} onOpenSettings={() => navigation.navigate('Settings')} />
+              ) : (
+                <View style={styles.error} accessibilityRole="alert">
+                  <Text style={styles.errorTitle}>Activity request failed</Text>
+                  <Text style={styles.message}>{error.message}</Text>
+                </View>
+              )
             ) : null}
           </View>
         }

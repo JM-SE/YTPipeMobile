@@ -1,4 +1,6 @@
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { useStatusQuery } from '../api/useStatusQuery';
@@ -10,9 +12,13 @@ import { QuotaSummaryCard } from '../components/dashboard/QuotaSummaryCard';
 import { ServiceReadinessCard } from '../components/dashboard/ServiceReadinessCard';
 import { ScreenShell } from '../components/ScreenShell';
 import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
+import type { AppStackParamList } from '../navigation/types';
 import { spacing } from '../theme/tokens';
 
+type Navigation = NativeStackNavigationProp<AppStackParamList>;
+
 export function DashboardScreen() {
+  const navigation = useNavigation<Navigation>();
   const { data, error, isLoading, isFetching, isRefetchError, refetch } = useStatusQuery();
   const { isOffline } = useConnectivityStatus();
   const tabBarHeight = useBottomTabBarHeight();
@@ -35,6 +41,7 @@ export function DashboardScreen() {
           onRetry={() => void refetch()}
           isFetching={isFetching}
           isOffline={isOffline}
+          onOpenSettings={() => navigation.navigate('Settings')}
         />
 
         {data ? (

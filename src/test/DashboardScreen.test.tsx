@@ -15,6 +15,11 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
   useBottomTabBarHeight: () => 56,
 }));
 
+const mockNavigate = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
 const { useStatusQuery } = jest.requireMock('../api/useStatusQuery') as {
   useStatusQuery: jest.Mock;
 };
@@ -100,5 +105,22 @@ describe('DashboardScreen phase 3', () => {
 
     fireEvent.press(screen.getByLabelText('Retry status'));
     expect(refetch).toHaveBeenCalled();
+  });
+
+  it('opens Settings from auth/config errors', () => {
+    useStatusQuery.mockReturnValue({
+      data: null,
+      error: { kind: 'auth', message: 'Authentication failed', status: 401 },
+      isLoading: false,
+      isFetching: false,
+      isRefetchError: false,
+      refetch: jest.fn(),
+    });
+
+    render(<DashboardScreen />);
+
+    fireEvent.press(screen.getByLabelText('Open Settings'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Settings');
   });
 });

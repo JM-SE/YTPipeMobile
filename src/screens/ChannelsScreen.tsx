@@ -1,23 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import type { ApiError } from '../api/errors';
 import type { Channel, MonitoringFilter } from '../api/types';
 import { useChannelsQuery } from '../api/useChannelsQuery';
-import { useUpdateChannelMonitoringMutation } from '../api/useUpdateChannelMonitoringMutation';
+import { AuthConfigErrorBanner } from '../components/AuthConfigErrorBanner';
 import { ChannelEducationModal } from '../components/channels/ChannelEducationModal';
 import { ChannelErrorBanner } from '../components/channels/ChannelErrorBanner';
 import { ChannelFilterTabs } from '../components/channels/ChannelFilterTabs';
 import { ChannelListItem } from '../components/channels/ChannelListItem';
 import { ScreenShell } from '../components/ScreenShell';
-import { useConfigStatus } from '../config/ConfigStatusContext';
-import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
+import { useChannelMonitoringToggle } from '../hooks/useChannelMonitoringToggle';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { AppStackParamList } from '../navigation/types';
-import { acknowledgeChannelEducation, hasAcknowledgedChannelEducation } from '../storage/channelEducationStorage';
 import { colors, spacing, typography } from '../theme/tokens';
 
 const SEARCH_DEBOUNCE_MS = 400;
@@ -27,66 +24,18 @@ type Navigation = NativeStackNavigationProp<AppStackParamList>;
 export function ChannelsScreen() {
   const navigation = useNavigation<Navigation>();
   const tabBarHeight = useBottomTabBarHeight();
-  const { config } = useConfigStatus();
-  const { isOffline } = useConnectivityStatus();
   const [filter, setFilter] = useState<MonitoringFilter>('monitored');
   const [search, setSearch] = useState('');
-  const [educationAcknowledged, setEducationAcknowledged] = useState(false);
-  const [educationChannel, setEducationChannel] = useState<Channel | null>(null);
-  const [lastError, setLastError] = useState<ApiError | null>(null);
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const query = useChannelsQuery({ monitoring: filter, query: debouncedSearch });
-  const mutation = useUpdateChannelMonitoringMutation();
-
-  useEffect(() => {
-    let active = true;
-    if (!config?.apiBaseUrl) return;
-
-    hasAcknowledgedChannelEducation(config.apiBaseUrl).then((acknowledged) => {
-      if (active) setEducationAcknowledged(acknowledged);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [config?.apiBaseUrl]);
+  const monitoringToggle = useChannelMonitoringToggle();
 
   const channels = useMemo(() => query.data?.pages.flatMap((page) => page.channels) ?? [], [query.data]);
   const total = query.data?.pages[0]?.pagination.total ?? 0;
-  const pendingChannelId = mutation.variables?.channelId;
   const showInitialLoading = query.isLoading && channels.length === 0;
   const showEmpty = !query.isLoading && channels.length === 0 && !query.error;
-
-  const runToggle = (channel: Channel, nextValue: boolean) => {
-    if (isOffline) return;
-
-    setLastError(null);
-    mutation.mutate(
-      { channelId: channel.channel_id, isMonitored: nextValue },
-      {
-        onError: (error) => setLastError(error),
-      },
-    );
-  };
-
-  const handleToggle = (channel: Channel, nextValue: boolean) => {
-    if (nextValue && !educationAcknowledged) {
-      setEducationChannel(channel);
-      return;
-    }
-
-    runToggle(channel, nextValue);
-  };
-
-  const confirmEducation = async () => {
-    if (!educationChannel || !config?.apiBaseUrl) return;
-
-    await acknowledgeChannelEducation(config.apiBaseUrl);
-    setEducationAcknowledged(true);
-    const channel = educationChannel;
-    setEducationChannel(null);
-    runToggle(channel, true);
-  };
+  const authError = monitoringToggle.lastError?.kind === 'auth' ? monitoringToggle.lastError : query.error?.kind === 'auth' ? query.error : null;
+  const channelError = monitoringToggle.lastError?.kind === 'auth' ? null : monitoringToggle.lastError ?? (query.error?.kind === 'auth' ? null : query.error ?? null);
 
   return (
     <ScreenShell title="Channels" subtitle="Manage which imported channels are eligible for future polling.">
@@ -98,9 +47,9 @@ export function ChannelsScreen() {
         renderItem={({ item }) => (
             <ChannelListItem
               channel={item}
-              disabled={isOffline || (mutation.isPending && pendingChannelId === item.channel_id)}
+              disabled={monitoringToggle.isOffline || (monitoringToggle.isPending && monitoringToggle.pendingChannelId === item.channel_id)}
             onPress={(channel) => navigation.navigate('ChannelDetail', { channel })}
-            onToggle={handleToggle}
+            onToggle={monitoringToggle.requestToggle}
           />
         )}
         ListHeaderComponent={
@@ -117,8 +66,9 @@ export function ChannelsScreen() {
               accessibilityLabel="Search channels"
             />
             <Text style={styles.count}>{total} channels found</Text>
-            {isOffline ? <Text style={styles.message}>Monitoring toggles and refresh are disabled while offline.</Text> : null}
-            <ChannelErrorBanner error={lastError ?? query.error ?? null} onDismiss={() => setLastError(null)} />
+            {monitoringToggle.isOffline ? <Text style={styles.message}>Monitoring toggles and refresh are disabled while offline.</Text> : null}
+            <AuthConfigErrorBanner error={authError} onOpenSettings={() => navigation.navigate('Settings')} />
+            <ChannelErrorBanner error={channelError} onDismiss={monitoringToggle.clearError} />
             {showInitialLoading ? <Text style={styles.message}>Loading channels…</Text> : null}
           </View>
         }
@@ -134,19 +84,19 @@ export function ChannelsScreen() {
         ListFooterComponent={
           query.isFetchingNextPage ? <Text style={styles.message}>Loading more channels…</Text> : null
         }
-        refreshControl={<RefreshControl refreshing={query.isFetching && !query.isFetchingNextPage && !isOffline} onRefresh={() => { if (!isOffline) void query.refetch(); }} />}
+        refreshControl={<RefreshControl refreshing={query.isFetching && !query.isFetchingNextPage && !monitoringToggle.isOffline} onRefresh={() => { if (!monitoringToggle.isOffline) void query.refetch(); }} />}
         onEndReached={() => {
-          if (!isOffline && query.hasNextPage && !query.isFetchingNextPage) {
+          if (!monitoringToggle.isOffline && query.hasNextPage && !query.isFetchingNextPage) {
             query.fetchNextPage();
           }
         }}
         onEndReachedThreshold={0.5}
       />
       <ChannelEducationModal
-        visible={Boolean(educationChannel)}
-        channelTitle={educationChannel?.title}
-        onCancel={() => setEducationChannel(null)}
-        onConfirm={confirmEducation}
+        visible={Boolean(monitoringToggle.educationChannel)}
+        channelTitle={monitoringToggle.educationChannel?.title}
+        onCancel={monitoringToggle.cancelEducation}
+        onConfirm={monitoringToggle.confirmEducation}
       />
     </ScreenShell>
   );

@@ -15,6 +15,11 @@ jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
 }));
 
+jest.mock('../storage/channelEducationStorage', () => ({
+  hasAcknowledgedChannelEducation: jest.fn().mockResolvedValue(false),
+  acknowledgeChannelEducation: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@react-navigation/bottom-tabs', () => ({
   useBottomTabBarHeight: () => 56,
 }));
@@ -120,5 +125,24 @@ describe('ChannelsScreen', () => {
         expect.objectContaining({ onError: expect.any(Function) }),
       );
     });
+  });
+
+  it('opens Settings from auth/config errors', () => {
+    useChannelsQuery.mockReturnValue({
+      data: undefined,
+      error: { kind: 'auth', message: 'Authentication failed', status: 401 },
+      isLoading: false,
+      isFetching: false,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      refetch: jest.fn(),
+      fetchNextPage: jest.fn(),
+    });
+
+    render(<ChannelsScreen />);
+
+    fireEvent.press(screen.getByLabelText('Open Settings'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Settings');
   });
 });

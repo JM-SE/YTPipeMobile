@@ -12,6 +12,11 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
   useBottomTabBarHeight: () => 56,
 }));
 
+const mockNavigate = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
 const { useActivityQuery } = jest.requireMock('../api/useActivityQuery') as {
   useActivityQuery: jest.Mock;
 };
@@ -149,5 +154,18 @@ describe('ActivityScreen', () => {
     render(<ActivityScreen />);
 
     expect(screen.getByText('No activity yet. Run Poll from Dashboard after monitoring channels to create activity.')).toBeTruthy();
+  });
+
+  it('opens Settings from auth/config errors', () => {
+    mockActivityQuery({
+      data: { pages: [{ items: [], pagination: { limit: 25, offset: 0, total: 0 } }] },
+      error: { kind: 'auth', message: 'Authentication failed', status: 401 },
+    });
+
+    render(<ActivityScreen />);
+
+    fireEvent.press(screen.getByLabelText('Open Settings'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Settings');
   });
 });

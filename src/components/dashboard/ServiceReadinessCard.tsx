@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '../../api/errors';
 import type { StatusResponse } from '../../api/types';
+import { AuthConfigErrorBanner } from '../AuthConfigErrorBanner';
 import { colors, spacing, typography } from '../../theme/tokens';
 import { DashboardCard, dashboardCardStyles } from './DashboardCard';
 import { readinessLabel } from './dashboardFormatters';
@@ -15,9 +16,10 @@ type Props = {
   onRetry: () => void;
   isFetching: boolean;
   isOffline?: boolean;
+  onOpenSettings?: () => void;
 };
 
-export function ServiceReadinessCard({ statusData, error, isLoading, isStaleFailure, onRetry, isFetching, isOffline = false }: Props) {
+export function ServiceReadinessCard({ statusData, error, isLoading, isStaleFailure, onRetry, isFetching, isOffline = false, onOpenSettings }: Props) {
   const [showDetails, setShowDetails] = useState(false);
   const hasData = Boolean(statusData);
   const ready = statusData?.ready ?? false;
@@ -41,7 +43,11 @@ export function ServiceReadinessCard({ statusData, error, isLoading, isStaleFail
 
       {isStaleFailure ? <Text style={styles.warning}>Refresh failed, showing stale dashboard data.</Text> : null}
 
-      {showError ? (
+      {showError && error?.kind === 'auth' && onOpenSettings ? (
+        <AuthConfigErrorBanner error={error} onOpenSettings={onOpenSettings} />
+      ) : null}
+
+      {showError && (error?.kind !== 'auth' || !onOpenSettings) ? (
         <Text style={styles.errorText}>
           {error?.kind === 'auth'
             ? 'Authentication/configuration issue. Verify API base URL and token in Settings.'
