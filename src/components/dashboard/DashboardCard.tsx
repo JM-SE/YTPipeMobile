@@ -48,8 +48,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   warningCard: {
-    borderColor: '#F2C66D',
-    backgroundColor: '#2A2418',
+    borderColor: colors.warning,
+    backgroundColor: colors.warningSurface,
   },
   title: {
     color: colors.textPrimary,

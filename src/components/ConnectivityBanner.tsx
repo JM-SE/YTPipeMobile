@@ -18,10 +18,10 @@ export function ConnectivityBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    borderColor: '#F2C66D',
+    borderColor: colors.warning,
     borderWidth: 1,
     borderRadius: 10,
-    backgroundColor: '#2A2418',
+    backgroundColor: colors.warningSurface,
     padding: spacing.md,
     gap: spacing.xs,
   },

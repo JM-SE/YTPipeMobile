@@ -38,7 +38,7 @@ export function ChannelEducationModal({ visible, channelTitle, onConfirm, onCanc
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,

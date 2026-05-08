@@ -3,7 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { PropsWithChildren } from 'react';
 
 import { ApiError } from '../api/errors';
-import { CHANNELS_PAGE_SIZE, useChannelsQuery } from '../api/useChannelsQuery';
+import { QUERY_PAGE_SIZE } from '../api/queryKeys';
+import { useChannelsQuery } from '../api/useChannelsQuery';
 
 jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
@@ -57,7 +58,7 @@ describe('useChannelsQuery', () => {
     expect(getChannels).toHaveBeenCalledWith(config, {
       monitoring: 'all',
       query: 'react',
-      limit: CHANNELS_PAGE_SIZE,
+      limit: QUERY_PAGE_SIZE.channels,
       offset: 0,
     });
   });

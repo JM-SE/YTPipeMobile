@@ -4,22 +4,8 @@ import { useConfigStatus } from '../config/ConfigStatusContext';
 import { ApiError } from './errors';
 import { runPoll, syncSubscriptions } from './mobileApi';
 import { queryKeys } from './queryKeys';
+import { requireActiveConfig } from './queryGuards';
 import type { PollResult, SyncResult } from './types';
-
-function isChannelsQuery(queryKey: readonly unknown[]) {
-  return queryKey[0] === 'channels';
-}
-
-function isActivityQuery(queryKey: readonly unknown[]) {
-  return queryKey[0] === 'activity';
-}
-
-function missingConfigError() {
-  return new ApiError({
-    kind: 'validation',
-    message: 'API configuration is missing. Open Settings and save a valid API base URL and mobile token.',
-  });
-}
 
 export function useSyncSubscriptionsMutation() {
   const { config } = useConfigStatus();
@@ -28,16 +14,13 @@ export function useSyncSubscriptionsMutation() {
   return useMutation<SyncResult, ApiError>({
     mutationKey: ['manualAction', 'sync'],
     retry: false,
-    mutationFn: () => {
-      if (!config) throw missingConfigError();
-      return syncSubscriptions(config);
-    },
+    mutationFn: () => syncSubscriptions(requireActiveConfig(config)),
     onSettled: async () => {
       if (!config) return;
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.status(config.apiBaseUrl) }),
-        queryClient.invalidateQueries({ predicate: (query) => isChannelsQuery(query.queryKey) }),
+        queryClient.invalidateQueries({ predicate: (query) => queryKeys.isChannels(query.queryKey) }),
       ]);
     },
   });
@@ -50,17 +33,14 @@ export function useRunPollMutation() {
   return useMutation<PollResult, ApiError>({
     mutationKey: ['manualAction', 'poll'],
     retry: false,
-    mutationFn: () => {
-      if (!config) throw missingConfigError();
-      return runPoll(config);
-    },
+    mutationFn: () => runPoll(requireActiveConfig(config)),
     onSettled: async () => {
       if (!config) return;
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.status(config.apiBaseUrl) }),
-        queryClient.invalidateQueries({ predicate: (query) => isChannelsQuery(query.queryKey) }),
-        queryClient.invalidateQueries({ predicate: (query) => isActivityQuery(query.queryKey) }),
+        queryClient.invalidateQueries({ predicate: (query) => queryKeys.isChannels(query.queryKey) }),
+        queryClient.invalidateQueries({ predicate: (query) => queryKeys.isActivity(query.queryKey) }),
       ]);
     },
   });

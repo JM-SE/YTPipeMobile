@@ -3,22 +3,13 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useConfigStatus } from '../config/ConfigStatusContext';
 import { ApiError } from './errors';
 import { getActivity } from './mobileApi';
+import { queryKeys, QUERY_PAGE_SIZE } from './queryKeys';
+import { requireActiveConfig, retryTransientApiError } from './queryGuards';
 import type { ActivityResponse, ActivityStatusFilter } from './types';
-
-export const ACTIVITY_PAGE_SIZE = 25;
 
 type UseActivityQueryParams = {
   status?: ActivityStatusFilter;
 };
-
-function canRetry(error: ApiError, failureCount: number) {
-  if (failureCount >= 1) return false;
-  return error.kind === 'network' || error.kind === 'timeout' || error.kind === 'server';
-}
-
-export function activityInfiniteQueryKey(baseUrl: string, status: ActivityStatusFilter) {
-  return ['activity', baseUrl, status, ACTIVITY_PAGE_SIZE] as const;
-}
 
 export function useActivityQuery({ status = 'all' }: UseActivityQueryParams = {}) {
   const { status: configStatus, config } = useConfigStatus();
@@ -26,11 +17,11 @@ export function useActivityQuery({ status = 'all' }: UseActivityQueryParams = {}
   const baseUrl = config?.apiBaseUrl ?? 'no-config';
 
   return useInfiniteQuery<ActivityResponse, ApiError>({
-    queryKey: activityInfiniteQueryKey(baseUrl, status),
+    queryKey: queryKeys.activityInfinite(baseUrl, status),
     queryFn: ({ pageParam }) =>
-      getActivity(config!, {
+      getActivity(requireActiveConfig(config), {
         status,
-        limit: ACTIVITY_PAGE_SIZE,
+        limit: QUERY_PAGE_SIZE.activity,
         offset: typeof pageParam === 'number' ? pageParam : 0,
       }),
     initialPageParam: 0,
@@ -39,7 +30,7 @@ export function useActivityQuery({ status = 'all' }: UseActivityQueryParams = {}
       return loaded < lastPage.pagination.total ? loaded : undefined;
     },
     enabled,
-    retry: (failureCount, error) => canRetry(error, failureCount),
+    retry: (failureCount, error) => retryTransientApiError(failureCount, error),
     placeholderData: (previousData) => previousData,
   });
 }

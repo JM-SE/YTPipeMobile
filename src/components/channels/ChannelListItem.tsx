@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
   },
   monitored: {
     color: colors.success,
-    backgroundColor: 'rgba(76, 195, 138, 0.12)',
+    backgroundColor: colors.successSurface,
   },
   unmonitored: {
     color: colors.textSecondary,
-    backgroundColor: 'rgba(154, 167, 204, 0.12)',
+    backgroundColor: colors.mutedSurface,
   },
   latest: {
     color: colors.textSecondary,

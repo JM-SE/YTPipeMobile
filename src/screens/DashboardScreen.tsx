@@ -13,7 +13,7 @@ import { ServiceReadinessCard } from '../components/dashboard/ServiceReadinessCa
 import { ScreenShell } from '../components/ScreenShell';
 import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
 import type { AppStackParamList } from '../navigation/types';
-import { spacing } from '../theme/tokens';
+import { colors, spacing } from '../theme/tokens';
 
 type Navigation = NativeStackNavigationProp<AppStackParamList>;
 
@@ -72,6 +72,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   loadingHint: {
-    color: '#9AA7CC',
+    color: colors.textSecondary,
   },
 });

@@ -202,15 +202,15 @@ const styles = StyleSheet.create({
   },
   success: {
     borderColor: colors.success,
-    backgroundColor: 'rgba(76, 195, 138, 0.12)',
+    backgroundColor: colors.successSurface,
   },
   warning: {
-    borderColor: '#F2C66D',
-    backgroundColor: '#2A2418',
+    borderColor: colors.warning,
+    backgroundColor: colors.warningSurface,
   },
   error: {
     borderColor: colors.danger,
-    backgroundColor: 'rgba(239, 107, 115, 0.12)',
+    backgroundColor: colors.dangerSurface,
   },
   feedbackTitle: {
     color: colors.textPrimary,

@@ -136,11 +136,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   warning: {
-    borderColor: '#F2C66D',
+    borderColor: colors.warning,
     borderWidth: 1,
     borderRadius: 10,
     padding: spacing.md,
-    backgroundColor: '#2A2418',
+    backgroundColor: colors.warningSurface,
   },
   warningText: {
     color: colors.textPrimary,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: spacing.md,
     gap: spacing.xs,
-    backgroundColor: 'rgba(239, 107, 115, 0.12)',
+    backgroundColor: colors.dangerSurface,
   },
   errorTitle: {
     color: colors.danger,

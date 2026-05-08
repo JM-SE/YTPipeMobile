@@ -3,7 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { PropsWithChildren } from 'react';
 
 import { ApiError } from '../api/errors';
-import { ACTIVITY_PAGE_SIZE, useActivityQuery } from '../api/useActivityQuery';
+import { QUERY_PAGE_SIZE } from '../api/queryKeys';
+import { useActivityQuery } from '../api/useActivityQuery';
 
 jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
@@ -56,7 +57,7 @@ describe('useActivityQuery', () => {
 
     expect(getActivity).toHaveBeenCalledWith(config, {
       status: 'failed',
-      limit: ACTIVITY_PAGE_SIZE,
+      limit: QUERY_PAGE_SIZE.activity,
       offset: 0,
     });
   });

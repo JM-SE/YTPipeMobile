@@ -98,10 +98,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   okBadge: {
-    backgroundColor: '#1B3A2C',
+    backgroundColor: colors.successBadgeSurface,
   },
   warnBadge: {
-    backgroundColor: '#4A3B1A',
+    backgroundColor: colors.warningBadgeSurface,
   },
   badgeText: {
     color: colors.textPrimary,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   warning: {
-    color: '#F2C66D',
+    color: colors.warning,
     fontSize: typography.caption,
   },
   errorText: {

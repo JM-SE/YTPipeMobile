@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing.md,
     gap: spacing.sm,
-    backgroundColor: 'rgba(239, 107, 115, 0.12)',
+    backgroundColor: colors.dangerSurface,
   },
   title: {
     color: colors.danger,

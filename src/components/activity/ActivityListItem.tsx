@@ -106,11 +106,11 @@ const styles = StyleSheet.create({
   },
   normalBadge: {
     color: colors.success,
-    backgroundColor: 'rgba(76, 195, 138, 0.12)',
+    backgroundColor: colors.successSurface,
   },
   errorBadge: {
     color: colors.danger,
-    backgroundColor: 'rgba(239, 107, 115, 0.12)',
+    backgroundColor: colors.dangerSurface,
   },
   timeGroup: {
     gap: spacing.xs,

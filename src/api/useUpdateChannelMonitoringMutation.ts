@@ -4,6 +4,7 @@ import { useConfigStatus } from '../config/ConfigStatusContext';
 import { ApiError } from './errors';
 import { updateChannelMonitoring } from './mobileApi';
 import { queryKeys } from './queryKeys';
+import { requireActiveConfig } from './queryGuards';
 import type { ChannelsResponse } from './types';
 
 type Variables = {
@@ -12,10 +13,6 @@ type Variables = {
 };
 
 type Snapshot = Array<[readonly unknown[], InfiniteData<ChannelsResponse> | undefined]>;
-
-function isChannelsKey(queryKey: readonly unknown[]) {
-  return queryKey[0] === 'channels';
-}
 
 function updateChannelInPages(data: InfiniteData<ChannelsResponse> | undefined, variables: Variables) {
   if (!data) return data;
@@ -45,12 +42,12 @@ export function useUpdateChannelMonitoringMutation() {
 
   return useMutation({
     mutationFn: ({ channelId, isMonitored }: Variables) =>
-      updateChannelMonitoring(config!, channelId, { is_monitored: isMonitored }),
+      updateChannelMonitoring(requireActiveConfig(config), channelId, { is_monitored: isMonitored }),
     onMutate: async (variables): Promise<Snapshot> => {
-      await queryClient.cancelQueries({ predicate: (query) => isChannelsKey(query.queryKey) });
+      await queryClient.cancelQueries({ predicate: (query) => queryKeys.isChannels(query.queryKey) });
 
       const snapshots = queryClient.getQueriesData<InfiniteData<ChannelsResponse>>({
-        predicate: (query) => isChannelsKey(query.queryKey),
+        predicate: (query) => queryKeys.isChannels(query.queryKey),
       });
 
       snapshots.forEach(([queryKey, data]) => {
@@ -64,7 +61,7 @@ export function useUpdateChannelMonitoringMutation() {
     },
     onSettled: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ predicate: (query) => isChannelsKey(query.queryKey) }),
+        queryClient.invalidateQueries({ predicate: (query) => queryKeys.isChannels(query.queryKey) }),
         config ? queryClient.invalidateQueries({ queryKey: queryKeys.status(config.apiBaseUrl) }) : Promise.resolve(),
       ]);
     },
