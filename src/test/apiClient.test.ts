@@ -8,6 +8,11 @@ const config = {
 describe('apiRequest', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('builds URL/query and sends auth header', async () => {
@@ -59,5 +64,36 @@ describe('apiRequest', () => {
     }) as jest.Mock;
 
     await expect(apiRequest(config, '/status')).rejects.toMatchObject({ kind: 'network' });
+  });
+
+  it('maps aborted requests to timeout ApiError', async () => {
+    jest.useFakeTimers();
+    global.fetch = jest.fn((_url: string | URL | Request, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          const error = new Error('Aborted');
+          error.name = 'AbortError';
+          reject(error);
+        });
+      }),
+    ) as jest.Mock;
+
+    const request = apiRequest(config, '/status');
+    jest.advanceTimersByTime(12_000);
+
+    await expect(request).rejects.toMatchObject({ kind: 'timeout' });
+  });
+
+  it('omits auth header for public requests', async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ status: 'ok' }),
+    }) as unknown as Response) as jest.Mock;
+
+    await apiRequest(config, '/health', { protected: false });
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 });

@@ -1,11 +1,11 @@
-import { InfiniteData, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { InfiniteData } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import { PropsWithChildren } from 'react';
 
 import { ApiError } from '../api/errors';
 import { queryKeys } from '../api/queryKeys';
 import type { ChannelsResponse } from '../api/types';
 import { useUpdateChannelMonitoringMutation } from '../api/useUpdateChannelMonitoringMutation';
+import { createQueryClientWrapper } from './testUtils';
 
 jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
@@ -45,10 +45,6 @@ const channelsData: InfiniteData<ChannelsResponse> = {
   ],
 };
 
-function wrapperFactory(queryClient: QueryClient) {
-  return ({ children }: PropsWithChildren) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-}
-
 describe('useUpdateChannelMonitoringMutation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -56,13 +52,13 @@ describe('useUpdateChannelMonitoringMutation', () => {
   });
 
   it('optimistically updates channel caches and calls PATCH endpoint', async () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const { queryClient, Wrapper } = createQueryClientWrapper();
     const queryKey = queryKeys.channelsInfinite(config.apiBaseUrl, 'unmonitored', '');
     queryClient.setQueryData(queryKey, channelsData);
     updateChannelMonitoring.mockResolvedValue({ channel_id: 1, is_monitored: true });
 
     const { result } = renderHook(() => useUpdateChannelMonitoringMutation(), {
-      wrapper: wrapperFactory(queryClient),
+      wrapper: Wrapper,
     });
 
     await act(async () => {
@@ -78,13 +74,13 @@ describe('useUpdateChannelMonitoringMutation', () => {
   });
 
   it('rolls back optimistic cache updates when PATCH fails', async () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const { queryClient, Wrapper } = createQueryClientWrapper();
     const queryKey = queryKeys.channelsInfinite(config.apiBaseUrl, 'unmonitored', '');
     queryClient.setQueryData(queryKey, channelsData);
     updateChannelMonitoring.mockRejectedValue(new ApiError({ kind: 'server', message: 'server down', status: 502 }));
 
     const { result } = renderHook(() => useUpdateChannelMonitoringMutation(), {
-      wrapper: wrapperFactory(queryClient),
+      wrapper: Wrapper,
     });
 
     await act(async () => {
@@ -104,10 +100,10 @@ describe('useUpdateChannelMonitoringMutation', () => {
 
   it('returns a friendly validation error when config is missing', async () => {
     useConfigStatus.mockReturnValue({ config: null });
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const { queryClient, Wrapper } = createQueryClientWrapper();
 
     const { result } = renderHook(() => useUpdateChannelMonitoringMutation(), {
-      wrapper: wrapperFactory(queryClient),
+      wrapper: Wrapper,
     });
 
     await act(async () => {
