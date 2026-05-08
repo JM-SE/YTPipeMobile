@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Pressable, Text } from 'react-native';
 
 import { ScreenShell } from '../components/ScreenShell';
+import { isDevelopmentBuild } from '../config/environment';
 import { AppStackParamList, SetupStackParamList } from '../navigation/types';
 import { FeedbackBanner } from './settings/FeedbackBanner';
 import { LocalMockHelper } from './settings/LocalMockHelper';
@@ -41,7 +42,7 @@ export function SettingsScreen({ navigation }: Props) {
         onToggleShowHide={toggleTokenVisibility}
       />
 
-      <LocalMockHelper />
+      {isDevelopmentBuild() ? <LocalMockHelper /> : null}
 
       <FeedbackBanner feedback={feedback} />
 

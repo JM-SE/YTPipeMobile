@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { SettingsScreen } from '../screens/SettingsScreen';
+import * as environment from '../config/environment';
 
 jest.mock('../api/statusTestClient', () => ({
   testStatusConnection: jest.fn(),
@@ -35,7 +36,12 @@ const navigation = {
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(environment, 'isDevelopmentBuild').mockReturnValue(true);
     useConnectivityStatus.mockReturnValue({ isOffline: false });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('activates config after successful save and test', async () => {
@@ -119,5 +125,20 @@ describe('SettingsScreen', () => {
     expect(screen.getByLabelText('Save and Test settings')).toBeDisabled();
     expect(screen.getByText('Offline - reconnect to test')).toBeTruthy();
     expect(screen.getByLabelText('Clear Config')).not.toBeDisabled();
+  });
+
+  it('hides the local mock helper outside development builds', () => {
+    jest.spyOn(environment, 'isDevelopmentBuild').mockReturnValue(false);
+    useConfigStatus.mockReturnValue({ activateConfig: jest.fn(), clearConfig: jest.fn(), config: null });
+
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SettingsScreen navigation={navigation} route={{ key: 'Settings', name: 'Settings' } as any} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByText('Local mock helper')).toBeNull();
+    expect(screen.queryByText('Mock token: dev-mobile-token')).toBeNull();
   });
 });

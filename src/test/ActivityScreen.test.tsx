@@ -121,6 +121,26 @@ describe('ActivityScreen', () => {
     expect(await screen.findByText('Could not open YouTube link. Try again from another device/browser.')).toBeTruthy();
   });
 
+  it('blocks non-YouTube links before opening external URLs', async () => {
+    mockActivityQuery({
+      data: {
+        pages: [
+          {
+            items: [{ ...activity, youtube_url: 'mailto:attacker@example.com' }],
+            pagination: { limit: 25, offset: 0, total: 1 },
+          },
+        ],
+      },
+    });
+
+    render(<ActivityScreen />);
+    fireEvent.press(screen.getByText('Open YouTube'));
+
+    expect(await screen.findByText('Could not open YouTube link. Try again from another device/browser.')).toBeTruthy();
+    expect(Linking.canOpenURL).not.toHaveBeenCalled();
+    expect(Linking.openURL).not.toHaveBeenCalled();
+  });
+
   it('shows filter-aware empty state', () => {
     mockActivityQuery({
       data: { pages: [{ items: [], pagination: { limit: 25, offset: 0, total: 0 } }] },

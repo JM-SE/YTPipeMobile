@@ -1,16 +1,28 @@
 import { z } from 'zod';
 
-const allowedProtocols = new Set(['http:', 'https:']);
+import { isDevelopmentBuild } from './environment';
+
+const API_PROTOCOL = {
+  HTTP: 'http:',
+  HTTPS: 'https:',
+} as const;
+
+const LOCAL_HTTP_HOSTS = new Set(['localhost', '127.0.0.1', '10.0.2.2']);
 
 export const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/+$/, '');
 
 export const normalizeToken = (value: string) => value.trim();
 
-const isValidBaseUrl = (value: string) => {
+export const isValidApiBaseUrl = (value: string, isDev = isDevelopmentBuild()) => {
   try {
     const parsed = new URL(normalizeApiBaseUrl(value));
-    if (!allowedProtocols.has(parsed.protocol)) return false;
-    return parsed.hostname.trim().length > 0;
+    const hostname = parsed.hostname.trim().toLowerCase();
+
+    if (!hostname) return false;
+    if (parsed.protocol === API_PROTOCOL.HTTPS) return true;
+    if (parsed.protocol === API_PROTOCOL.HTTP) return isDev && LOCAL_HTTP_HOSTS.has(hostname);
+
+    return false;
   } catch {
     return false;
   }
@@ -20,7 +32,10 @@ export const configFormSchema = z.object({
   apiBaseUrl: z
     .string()
     .min(1, 'API Base URL is required')
-    .refine(isValidBaseUrl, 'Enter a valid HTTP/HTTPS base URL'),
+    .refine(
+      (value) => isValidApiBaseUrl(value),
+      'Enter an HTTPS API URL. HTTP is only supported for local development hosts.',
+    ),
   mobileApiToken: z.string().min(1, 'Mobile API token is required'),
 });
 

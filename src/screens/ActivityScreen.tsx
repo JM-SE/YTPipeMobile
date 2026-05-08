@@ -7,6 +7,7 @@ import { useActivityQuery } from '../api/useActivityQuery';
 import { ActivityListItem } from '../components/activity/ActivityListItem';
 import { ActivityStatusFilterTabs } from '../components/activity/ActivityStatusFilterTabs';
 import { filterAwareEmptyMessage } from '../components/activity/activityFormatters';
+import { isAllowedYouTubeUrl, YOUTUBE_LINK_ERROR } from '../components/activity/youtubeLinks';
 import { ScreenShell } from '../components/ScreenShell';
 import { useConnectivityStatus } from '../connectivity/ConnectivityContext';
 import { colors, spacing, typography } from '../theme/tokens';
@@ -42,13 +43,14 @@ export function ActivityScreen() {
     setLinkErrors((current) => ({ ...current, [item.activity_id]: '' }));
 
     try {
+      if (!isAllowedYouTubeUrl(item.youtube_url)) throw new Error('Untrusted YouTube URL');
       const supported = await Linking.canOpenURL(item.youtube_url);
       if (!supported) throw new Error('Unsupported URL');
       await Linking.openURL(item.youtube_url);
     } catch {
       setLinkErrors((current) => ({
         ...current,
-        [item.activity_id]: 'Could not open YouTube link. Try again from another device/browser.',
+        [item.activity_id]: YOUTUBE_LINK_ERROR,
       }));
     }
   };

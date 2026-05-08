@@ -1,7 +1,7 @@
-import { configFormSchema, normalizeApiBaseUrl, normalizeToken } from '../config/configSchema';
+import { configFormSchema, isValidApiBaseUrl, normalizeApiBaseUrl, normalizeToken } from '../config/configSchema';
 
 describe('config schema', () => {
-  it('accepts valid HTTP/HTTPS URLs including localhost variants', () => {
+  it('accepts valid HTTPS URLs and local dev HTTP URLs', () => {
     const inputs = [
       'https://api.example.com',
       'http://localhost:4000',
@@ -13,6 +13,15 @@ describe('config schema', () => {
       const result = configFormSchema.safeParse({ apiBaseUrl: url, mobileApiToken: 'token' });
       expect(result.success).toBe(true);
     }
+  });
+
+  it('rejects non-local HTTP URLs outside development mode', () => {
+    expect(isValidApiBaseUrl('http://api.example.com', true)).toBe(false);
+    expect(isValidApiBaseUrl('http://api.example.com', false)).toBe(false);
+    expect(isValidApiBaseUrl('http://localhost:4000', false)).toBe(false);
+    expect(isValidApiBaseUrl('http://127.0.0.1:8000', false)).toBe(false);
+    expect(isValidApiBaseUrl('http://10.0.2.2:4000', false)).toBe(false);
+    expect(isValidApiBaseUrl('https://api.example.com', false)).toBe(true);
   });
 
   it('normalizes base URL trailing slash', () => {
