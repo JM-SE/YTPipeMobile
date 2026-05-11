@@ -3,9 +3,14 @@ import { z } from 'zod';
 import type {
   ActivityResponse,
   ChannelsResponse,
+  MobilePushStatusResponse,
+  PatchMobilePushSettingsResponse,
   PollResult,
+  RegisterMobilePushInstallationResponse,
+  SendMobilePushTestResponse,
   StatusResponse,
   SyncResult,
+  UnregisterMobilePushInstallationResponse,
   UpdateChannelMonitoringResponse,
 } from '../types';
 
@@ -159,3 +164,85 @@ export const activityResponseSchema = z
     pagination: paginationSchema,
   })
   .passthrough() satisfies z.ZodType<ActivityResponse>;
+
+const mobilePushPlatformSchema = z.enum(['ios', 'android', 'unknown']);
+
+export const mobilePushStatusResponseSchema = z
+  .object({
+    global: z
+      .object({
+        enabled: z.boolean(),
+        default_for_monitored_channels: z.boolean(),
+        first_enabled_at: nullableStringSchema,
+        updated_at: nullableStringSchema,
+      })
+      .passthrough(),
+    installation: z
+      .object({
+        installation_id: z.string(),
+        registered: z.boolean(),
+        enabled: z.boolean(),
+        platform: mobilePushPlatformSchema,
+        app_version: nullableStringSchema,
+        build_number: nullableStringSchema,
+        device_name: nullableStringSchema,
+        token_masked: nullableStringSchema,
+        last_registered_at: nullableStringSchema,
+        last_seen_at: nullableStringSchema,
+        last_unregistered_at: nullableStringSchema,
+      })
+      .passthrough(),
+    delivery: z
+      .object({
+        last_attempt_at: nullableStringSchema,
+        last_success_at: nullableStringSchema,
+        last_error: nullableStringSchema,
+        last_expo_ticket_id: nullableStringSchema,
+        last_expo_status: nullableStringSchema,
+        last_receipt_checked_at: nullableStringSchema,
+      })
+      .passthrough(),
+  })
+  .passthrough() satisfies z.ZodType<MobilePushStatusResponse>;
+
+export const registerMobilePushInstallationResponseSchema = z
+  .object({
+    installation_id: z.string(),
+    registered: z.boolean(),
+    enabled: z.boolean(),
+    global_enabled: z.boolean(),
+    token_masked: nullableStringSchema,
+    last_registered_at: nullableStringSchema,
+  })
+  .passthrough() satisfies z.ZodType<RegisterMobilePushInstallationResponse>;
+
+export const unregisterMobilePushInstallationResponseSchema = z
+  .object({
+    installation_id: z.string(),
+    registered: z.boolean(),
+    enabled: z.boolean(),
+    unregistered_at: nullableStringSchema,
+  })
+  .passthrough() satisfies z.ZodType<UnregisterMobilePushInstallationResponse>;
+
+export const patchMobilePushSettingsResponseSchema = z
+  .object({
+    enabled: z.boolean(),
+    default_for_monitored_channels: z.boolean(),
+    first_enabled_at: nullableStringSchema,
+    updated_at: nullableStringSchema,
+    monitored_channels_effectively_enabled_count: z.number(),
+  })
+  .passthrough() satisfies z.ZodType<PatchMobilePushSettingsResponse>;
+
+export const sendMobilePushTestResponseSchema = z
+  .object({
+    sent: z.boolean(),
+    installation_id: z.string(),
+    event_type: z.literal('test'),
+    last_attempt_at: nullableStringSchema,
+    expo_status: nullableStringSchema,
+    expo_ticket_id: nullableStringSchema,
+    message: z.string(),
+  })
+  .passthrough() satisfies z.ZodType<SendMobilePushTestResponse>;

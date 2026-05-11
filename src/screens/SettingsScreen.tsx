@@ -6,6 +6,7 @@ import { isDevelopmentBuild } from '../config/environment';
 import { AppStackParamList, SetupStackParamList } from '../navigation/types';
 import { FeedbackBanner } from './settings/FeedbackBanner';
 import { LocalMockHelper } from './settings/LocalMockHelper';
+import { PushSettingsSection } from './settings/PushSettingsSection';
 import { SettingsField } from './settings/SettingsField';
 import { styles } from './settings/SettingsScreen.styles';
 import { useSettingsController } from './settings/useSettingsController';
@@ -43,6 +44,8 @@ export function SettingsScreen({ navigation }: Props) {
       />
 
       {isDevelopmentBuild() ? <LocalMockHelper /> : null}
+
+      <PushSettingsSection />
 
       <FeedbackBanner feedback={feedback} />
 

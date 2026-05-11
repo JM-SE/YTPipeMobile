@@ -5,10 +5,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { testStatusConnection } from '../../api/statusTestClient';
+import { unregisterMobilePushInstallation } from '../../api/mobilePushApi';
 import { useConfigStatus } from '../../config/ConfigStatusContext';
 import { ConfigFormValues, configFormSchema, normalizeApiBaseUrl, normalizeToken } from '../../config/configSchema';
 import { useConnectivityStatus } from '../../connectivity/ConnectivityContext';
 import { AppStackParamList, SetupStackParamList } from '../../navigation/types';
+import { clearPushInstallationId, getPushInstallationId } from '../../storage/pushInstallationStorage';
 import { SettingsFeedback } from './types';
 
 type SettingsNavigation = NativeStackNavigationProp<AppStackParamList, 'Settings'> | NativeStackNavigationProp<SetupStackParamList, 'Settings'>;
@@ -92,14 +94,32 @@ export function useSettingsController({ navigation }: Params) {
     setClearing(true);
     setFeedback(null);
     try {
+      const installationId = await getPushInstallationId();
+      let unregisterFailed = false;
+
+      if (config && installationId && !isOffline) {
+        try {
+          await unregisterMobilePushInstallation(config, installationId);
+        } catch {
+          unregisterFailed = true;
+        }
+      } else if (config && installationId && isOffline) {
+        unregisterFailed = true;
+      }
+
       await clearConfig();
+      await clearPushInstallationId();
       queryClient.clear();
+
+      if (unregisterFailed) {
+        setFeedback({ type: 'error', message: 'Local config cleared. Device unregister could not be confirmed.' });
+      }
     } catch {
       setFeedback({ type: 'error', message: 'Failed to clear local configuration.' });
     } finally {
       setClearing(false);
     }
-  }, [clearConfig, queryClient]);
+  }, [clearConfig, config, isOffline, queryClient]);
 
   return {
     control,

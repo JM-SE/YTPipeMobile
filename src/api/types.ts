@@ -132,3 +132,93 @@ export interface ActivityQuery {
   limit?: number;
   offset?: number;
 }
+
+export type MobilePushPlatform = 'ios' | 'android' | 'unknown';
+
+export interface MobilePushGlobalStatusDto {
+  enabled: boolean;
+  default_for_monitored_channels: boolean;
+  first_enabled_at: string | null;
+  updated_at: string | null;
+}
+
+export interface MobilePushInstallationStatusDto {
+  installation_id: string;
+  registered: boolean;
+  enabled: boolean;
+  platform: MobilePushPlatform;
+  app_version: string | null;
+  build_number: string | null;
+  device_name: string | null;
+  token_masked: string | null;
+  last_registered_at: string | null;
+  last_seen_at: string | null;
+  last_unregistered_at: string | null;
+}
+
+export interface MobilePushDeliveryStatusDto {
+  last_attempt_at: string | null;
+  last_success_at: string | null;
+  last_error: string | null;
+  last_expo_ticket_id: string | null;
+  last_expo_status: string | null;
+  last_receipt_checked_at: string | null;
+}
+
+export interface MobilePushStatusResponse {
+  global: MobilePushGlobalStatusDto;
+  installation: MobilePushInstallationStatusDto;
+  delivery: MobilePushDeliveryStatusDto;
+}
+
+export interface RegisterMobilePushInstallationRequest {
+  installation_id: string;
+  expo_push_token: string;
+  platform: MobilePushPlatform;
+  app_version: string | null;
+  build_number: string | null;
+  device_name: string | null;
+}
+
+export interface RegisterMobilePushInstallationResponse {
+  installation_id: string;
+  registered: boolean;
+  enabled: boolean;
+  global_enabled: boolean;
+  token_masked: string | null;
+  last_registered_at: string | null;
+}
+
+export interface UnregisterMobilePushInstallationResponse {
+  installation_id: string;
+  registered: boolean;
+  enabled: boolean;
+  unregistered_at: string | null;
+}
+
+export interface PatchMobilePushSettingsRequest {
+  enabled: boolean;
+  default_for_monitored_channels: boolean;
+}
+
+export interface PatchMobilePushSettingsResponse {
+  enabled: boolean;
+  default_for_monitored_channels: boolean;
+  first_enabled_at: string | null;
+  updated_at: string | null;
+  monitored_channels_effectively_enabled_count: number;
+}
+
+export interface SendMobilePushTestRequest {
+  installation_id: string;
+}
+
+export interface SendMobilePushTestResponse {
+  sent: boolean;
+  installation_id: string;
+  event_type: 'test';
+  last_attempt_at: string | null;
+  expo_status: string | null;
+  expo_ticket_id: string | null;
+  message: string;
+}

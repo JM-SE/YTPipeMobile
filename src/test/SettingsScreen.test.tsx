@@ -16,6 +16,23 @@ jest.mock('../connectivity/ConnectivityContext', () => ({
   useConnectivityStatus: jest.fn(),
 }));
 
+jest.mock('../api/mobilePushApi', () => ({
+  unregisterMobilePushInstallation: jest.fn(),
+}));
+
+jest.mock('../storage/pushInstallationStorage', () => ({
+  clearPushInstallationId: jest.fn(async () => undefined),
+  getPushInstallationId: jest.fn(async () => null),
+}));
+
+jest.mock('../screens/settings/PushSettingsSection', () => {
+  const { Text } = require('react-native');
+
+  return {
+    PushSettingsSection: () => <Text>Push settings section</Text>,
+  };
+});
+
 const { useConfigStatus } = jest.requireMock('../config/ConfigStatusContext') as {
   useConfigStatus: jest.Mock;
 };
@@ -28,6 +45,15 @@ const { useConnectivityStatus } = jest.requireMock('../connectivity/Connectivity
   useConnectivityStatus: jest.Mock;
 };
 
+const { unregisterMobilePushInstallation } = jest.requireMock('../api/mobilePushApi') as {
+  unregisterMobilePushInstallation: jest.Mock;
+};
+
+const { clearPushInstallationId, getPushInstallationId } = jest.requireMock('../storage/pushInstallationStorage') as {
+  clearPushInstallationId: jest.Mock;
+  getPushInstallationId: jest.Mock;
+};
+
 const navigation = {
   canGoBack: () => true,
   goBack: jest.fn(),
@@ -38,6 +64,8 @@ describe('SettingsScreen', () => {
     jest.clearAllMocks();
     jest.spyOn(environment, 'isDevelopmentBuild').mockReturnValue(true);
     useConnectivityStatus.mockReturnValue({ isOffline: false });
+    getPushInstallationId.mockResolvedValue(null);
+    clearPushInstallationId.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -108,6 +136,31 @@ describe('SettingsScreen', () => {
 
     await waitFor(() => {
       expect(clearConfig).toHaveBeenCalledTimes(1);
+      expect(clearPushInstallationId).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('best-effort unregisters push installation before clearing saved config', async () => {
+    const savedConfig = { apiBaseUrl: 'https://api.example.com', mobileApiToken: 'mobile-token' };
+    const clearConfig = jest.fn(async () => undefined);
+    getPushInstallationId.mockResolvedValue('installation-123');
+    unregisterMobilePushInstallation.mockResolvedValue({ registered: false });
+    useConfigStatus.mockReturnValue({ activateConfig: jest.fn(), clearConfig, config: savedConfig });
+    testStatusConnection.mockResolvedValue({ environment: 'mock', ready: true });
+
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SettingsScreen navigation={navigation} route={{ key: 'Settings', name: 'Settings' } as any} />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.press(screen.getByText('Clear Config'));
+
+    await waitFor(() => {
+      expect(unregisterMobilePushInstallation).toHaveBeenCalledWith(savedConfig, 'installation-123');
+      expect(clearConfig).toHaveBeenCalledTimes(1);
+      expect(clearPushInstallationId).toHaveBeenCalledTimes(1);
     });
   });
 

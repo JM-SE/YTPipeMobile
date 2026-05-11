@@ -43,8 +43,17 @@ export const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '700',
   },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontWeight: '800',
+    fontSize: typography.subtitle,
+  },
   helperText: {
     color: colors.textSecondary,
+    fontSize: typography.caption,
+  },
+  warningText: {
+    color: colors.warning,
     fontSize: typography.caption,
   },
   feedbackCard: {
@@ -70,6 +79,24 @@ export const styles = StyleSheet.create({
   linkButtonText: {
     color: colors.accent,
     fontSize: typography.caption,
+  },
+  inlineRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  inlineTextBlock: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  diagnosticsCard: {
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.sm,
+    backgroundColor: colors.mutedSurface,
+    gap: spacing.xs,
   },
   primaryButton: {
     backgroundColor: colors.accent,

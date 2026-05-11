@@ -23,6 +23,7 @@
     "cors": "^2.8.6",
     "date-fns": "^4.1.0",
     "expo": "~54.0.33",
+    "expo-notifications": "~0.32.17",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "express": "^5.2.1",
