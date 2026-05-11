@@ -14,6 +14,7 @@ import { ChannelListItem } from '../components/channels/ChannelListItem';
 import { ScreenShell } from '../components/ScreenShell';
 import { useChannelMonitoringToggle } from '../hooks/useChannelMonitoringToggle';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useMobilePushChannelPreferencesQuery } from '../hooks/useMobilePushChannelPreferencesQuery';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, spacing, typography } from '../theme/tokens';
 
@@ -28,14 +29,30 @@ export function ChannelsScreen() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const query = useChannelsQuery({ monitoring: filter, query: debouncedSearch });
+  const pushPreferencesQuery = useMobilePushChannelPreferencesQuery({
+    monitoring: filter === 'all' ? 'all' : 'monitored',
+    query: debouncedSearch,
+  });
   const monitoringToggle = useChannelMonitoringToggle();
 
   const channels = useMemo(() => query.data?.pages.flatMap((page) => page.channels) ?? [], [query.data]);
+  const pushPreferencesByChannelId = useMemo(() => {
+    const preferences = pushPreferencesQuery.data?.pages.flatMap((page) => page.channels) ?? [];
+    return new Map(preferences.map((preference) => [preference.channel_id, preference]));
+  }, [pushPreferencesQuery.data]);
   const total = query.data?.pages[0]?.pagination.total ?? 0;
   const showInitialLoading = query.isLoading && channels.length === 0;
   const showEmpty = !query.isLoading && channels.length === 0 && !query.error;
-  const authError = monitoringToggle.lastError?.kind === 'auth' ? monitoringToggle.lastError : query.error?.kind === 'auth' ? query.error : null;
-  const channelError = monitoringToggle.lastError?.kind === 'auth' ? null : monitoringToggle.lastError ?? (query.error?.kind === 'auth' ? null : query.error ?? null);
+  const authError = monitoringToggle.lastError?.kind === 'auth'
+    ? monitoringToggle.lastError
+    : query.error?.kind === 'auth'
+      ? query.error
+      : pushPreferencesQuery.error?.kind === 'auth'
+        ? pushPreferencesQuery.error
+        : null;
+  const channelError = monitoringToggle.lastError?.kind === 'auth'
+    ? null
+    : monitoringToggle.lastError ?? (query.error?.kind === 'auth' ? null : query.error ?? null);
 
   return (
     <ScreenShell title="Channels" subtitle="Manage which imported channels are eligible for future polling.">
@@ -47,6 +64,7 @@ export function ChannelsScreen() {
         renderItem={({ item }) => (
             <ChannelListItem
               channel={item}
+              pushPreference={pushPreferencesByChannelId.get(item.channel_id)}
               disabled={monitoringToggle.isOffline || (monitoringToggle.isPending && monitoringToggle.pendingChannelId === item.channel_id)}
             onPress={(channel) => navigation.navigate('ChannelDetail', { channel })}
             onToggle={monitoringToggle.requestToggle}
@@ -69,6 +87,7 @@ export function ChannelsScreen() {
             {monitoringToggle.isOffline ? <Text style={styles.message}>Monitoring toggles and refresh are disabled while offline.</Text> : null}
             <AuthConfigErrorBanner error={authError} onOpenSettings={() => navigation.navigate('Settings')} />
             <ChannelErrorBanner error={channelError} onDismiss={monitoringToggle.clearError} />
+            {pushPreferencesQuery.isLoading && filter !== 'unmonitored' ? <Text style={styles.message}>Loading push preferences…</Text> : null}
             {showInitialLoading ? <Text style={styles.message}>Loading channels…</Text> : null}
           </View>
         }

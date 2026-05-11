@@ -222,3 +222,45 @@ export interface SendMobilePushTestResponse {
   expo_ticket_id: string | null;
   message: string;
 }
+
+export const MOBILE_PUSH_CHANNEL_PREFERENCE_MONITORING = {
+  MONITORED: 'monitored',
+  ALL: 'all',
+} as const;
+
+export type MobilePushChannelPreferenceMonitoring =
+  (typeof MOBILE_PUSH_CHANNEL_PREFERENCE_MONITORING)[keyof typeof MOBILE_PUSH_CHANNEL_PREFERENCE_MONITORING];
+
+export interface MobilePushChannelPreferenceValue {
+  explicitly_set: boolean;
+  explicit_push_enabled: boolean | null;
+  updated_at: string | null;
+}
+
+export interface MobilePushChannelPreference {
+  channel_id: number;
+  youtube_channel_id: string;
+  title: string;
+  is_monitored: boolean;
+  push_eligible: boolean;
+  push_enabled: boolean;
+  preference: MobilePushChannelPreferenceValue;
+}
+
+export interface MobilePushChannelPreferencesResponse {
+  channels: MobilePushChannelPreference[];
+  pagination: Pagination;
+}
+
+export interface MobilePushChannelPreferencesQueryParams {
+  monitoring?: MobilePushChannelPreferenceMonitoring;
+  query?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PatchMobilePushChannelPreferenceRequest {
+  push_enabled: boolean;
+}
+
+export type PatchMobilePushChannelPreferenceResponse = MobilePushChannelPreference;

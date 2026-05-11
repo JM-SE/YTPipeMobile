@@ -11,6 +11,10 @@ jest.mock('../api/useUpdateChannelMonitoringMutation', () => ({
   useUpdateChannelMonitoringMutation: jest.fn(),
 }));
 
+jest.mock('../hooks/useMobilePushChannelPreferencesQuery', () => ({
+  useMobilePushChannelPreferencesQuery: jest.fn(),
+}));
+
 jest.mock('../config/ConfigStatusContext', () => ({
   useConfigStatus: jest.fn(),
 }));
@@ -37,6 +41,10 @@ const { useUpdateChannelMonitoringMutation } = jest.requireMock('../api/useUpdat
   useUpdateChannelMonitoringMutation: jest.Mock;
 };
 
+const { useMobilePushChannelPreferencesQuery } = jest.requireMock('../hooks/useMobilePushChannelPreferencesQuery') as {
+  useMobilePushChannelPreferencesQuery: jest.Mock;
+};
+
 const { useConfigStatus } = jest.requireMock('../config/ConfigStatusContext') as {
   useConfigStatus: jest.Mock;
 };
@@ -56,6 +64,11 @@ describe('ChannelsScreen', () => {
     jest.clearAllMocks();
     useConfigStatus.mockReturnValue({ config: { apiBaseUrl: 'http://10.0.2.2:4000' } });
     useUpdateChannelMonitoringMutation.mockReturnValue({ mutate: jest.fn(), isPending: false, variables: undefined });
+    useMobilePushChannelPreferencesQuery.mockReturnValue({
+      data: undefined,
+      error: null,
+      isLoading: false,
+    });
   });
 
   it('renders channel filters, search, and list items', () => {
@@ -144,5 +157,46 @@ describe('ChannelsScreen', () => {
     fireEvent.press(screen.getByLabelText('Open Settings'));
 
     expect(mockNavigate).toHaveBeenCalledWith('Settings');
+  });
+
+  it('shows passive push badge from preference overlay without active list push controls', () => {
+    const monitoredChannel = { ...channel, is_monitored: true };
+    useChannelsQuery.mockReturnValue({
+      data: { pages: [{ channels: [monitoredChannel], pagination: { limit: 25, offset: 0, total: 1 } }] },
+      error: null,
+      isLoading: false,
+      isFetching: false,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      refetch: jest.fn(),
+      fetchNextPage: jest.fn(),
+    });
+    useMobilePushChannelPreferencesQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            channels: [
+              {
+                channel_id: 1,
+                youtube_channel_id: 'yt-1',
+                title: 'React Native Weekly',
+                is_monitored: true,
+                push_eligible: true,
+                push_enabled: true,
+                preference: { explicitly_set: false, explicit_push_enabled: null, updated_at: null },
+              },
+            ],
+            pagination: { limit: 25, offset: 0, total: 1 },
+          },
+        ],
+      },
+      error: null,
+      isLoading: false,
+    });
+
+    render(<ChannelsScreen />);
+
+    expect(screen.getByText('Push enabled')).toBeTruthy();
+    expect(screen.queryByLabelText('Enable push alerts for React Native Weekly')).toBeNull();
   });
 });

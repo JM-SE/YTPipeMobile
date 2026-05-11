@@ -62,6 +62,7 @@ export function useUpdateChannelMonitoringMutation() {
     onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ predicate: (query) => queryKeys.isChannels(query.queryKey) }),
+        config ? queryClient.invalidateQueries({ queryKey: queryKeys.mobilePush.all(config.apiBaseUrl) }) : Promise.resolve(),
         config ? queryClient.invalidateQueries({ queryKey: queryKeys.status(config.apiBaseUrl) }) : Promise.resolve(),
       ]);
     },

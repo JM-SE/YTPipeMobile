@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import type {
   ActivityResponse,
+  MobilePushChannelPreference,
+  MobilePushChannelPreferencesResponse,
   ChannelsResponse,
   MobilePushStatusResponse,
   PatchMobilePushSettingsResponse,
@@ -246,3 +248,30 @@ export const sendMobilePushTestResponseSchema = z
     message: z.string(),
   })
   .passthrough() satisfies z.ZodType<SendMobilePushTestResponse>;
+
+const mobilePushChannelPreferenceValueSchema = z
+  .object({
+    explicitly_set: z.boolean(),
+    explicit_push_enabled: z.boolean().nullable(),
+    updated_at: nullableStringSchema,
+  })
+  .passthrough();
+
+export const mobilePushChannelPreferenceSchema = z
+  .object({
+    channel_id: z.number(),
+    youtube_channel_id: z.string(),
+    title: z.string(),
+    is_monitored: z.boolean(),
+    push_eligible: z.boolean(),
+    push_enabled: z.boolean(),
+    preference: mobilePushChannelPreferenceValueSchema,
+  })
+  .passthrough() satisfies z.ZodType<MobilePushChannelPreference>;
+
+export const mobilePushChannelPreferencesResponseSchema = z
+  .object({
+    channels: z.array(mobilePushChannelPreferenceSchema),
+    pagination: paginationSchema,
+  })
+  .passthrough() satisfies z.ZodType<MobilePushChannelPreferencesResponse>;

@@ -1,6 +1,8 @@
 import * as client from '../api/client';
 import {
+  getMobilePushChannelPreferences,
   getMobilePushStatus,
+  patchMobilePushChannelPreference,
   patchMobilePushSettings,
   registerMobilePushInstallation,
   sendMobilePushTest,
@@ -125,6 +127,36 @@ describe('mobile push API', () => {
     expect(spy).toHaveBeenNthCalledWith(3, config, '/internal/mobile-push/test', {
       method: 'POST',
       body: { installation_id: installationId },
+    });
+  });
+
+  it('calls channel preference endpoints with exact params and body', async () => {
+    const channelPreference = {
+      channel_id: 1,
+      youtube_channel_id: 'yt-1',
+      title: 'React Native Weekly',
+      is_monitored: true,
+      push_eligible: true,
+      push_enabled: true,
+      preference: { explicitly_set: false, explicit_push_enabled: null, updated_at: null },
+    };
+    const spy = jest.spyOn(client, 'apiRequest');
+    spy.mockResolvedValueOnce({
+      channels: [channelPreference],
+      pagination: { limit: 25, offset: 0, total: 1 },
+    } as never);
+    spy.mockResolvedValueOnce({ ...channelPreference, push_enabled: false, preference: { explicitly_set: true, explicit_push_enabled: false, updated_at: '2026-05-08T12:30:00Z' } } as never);
+
+    await getMobilePushChannelPreferences(config, { monitoring: 'monitored', query: 'react', limit: 25, offset: 0 });
+    await patchMobilePushChannelPreference(config, 1, { push_enabled: false });
+
+    expect(spy).toHaveBeenNthCalledWith(1, config, '/internal/mobile-push/channel-preferences', {
+      method: 'GET',
+      query: { monitoring: 'monitored', query: 'react', limit: 25, offset: 0 },
+    });
+    expect(spy).toHaveBeenNthCalledWith(2, config, '/internal/mobile-push/channels/1', {
+      method: 'PATCH',
+      body: { push_enabled: false },
     });
   });
 });

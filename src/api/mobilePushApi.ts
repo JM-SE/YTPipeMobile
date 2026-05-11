@@ -1,7 +1,11 @@
 import type { ApiClientConfig } from './client';
 import { apiRequest } from './client';
 import type {
+  MobilePushChannelPreferencesQueryParams,
+  MobilePushChannelPreferencesResponse,
   MobilePushStatusResponse,
+  PatchMobilePushChannelPreferenceRequest,
+  PatchMobilePushChannelPreferenceResponse,
   PatchMobilePushSettingsRequest,
   PatchMobilePushSettingsResponse,
   RegisterMobilePushInstallationRequest,
@@ -12,6 +16,8 @@ import type {
 } from './types';
 import { parseApiResponse } from './validation/parseResponse';
 import {
+  mobilePushChannelPreferenceSchema,
+  mobilePushChannelPreferencesResponseSchema,
   mobilePushStatusResponseSchema,
   patchMobilePushSettingsResponseSchema,
   registerMobilePushInstallationResponseSchema,
@@ -83,4 +89,37 @@ export async function sendMobilePushTest(
     body,
   });
   return parseApiResponse(sendMobilePushTestResponseSchema, response, 'POST /internal/mobile-push/test', config.mobileApiToken);
+}
+
+export async function getMobilePushChannelPreferences(
+  config: ApiClientConfig,
+  query: MobilePushChannelPreferencesQueryParams,
+): Promise<MobilePushChannelPreferencesResponse> {
+  const response = await apiRequest<unknown>(config, '/internal/mobile-push/channel-preferences', {
+    method: 'GET',
+    query: { ...query },
+  });
+  return parseApiResponse(
+    mobilePushChannelPreferencesResponseSchema,
+    response,
+    'GET /internal/mobile-push/channel-preferences',
+    config.mobileApiToken,
+  );
+}
+
+export async function patchMobilePushChannelPreference(
+  config: ApiClientConfig,
+  channelId: number,
+  body: PatchMobilePushChannelPreferenceRequest,
+): Promise<PatchMobilePushChannelPreferenceResponse> {
+  const response = await apiRequest<unknown>(config, `/internal/mobile-push/channels/${channelId}`, {
+    method: 'PATCH',
+    body,
+  });
+  return parseApiResponse(
+    mobilePushChannelPreferenceSchema,
+    response,
+    'PATCH /internal/mobile-push/channels/{channel_id}',
+    config.mobileApiToken,
+  );
 }

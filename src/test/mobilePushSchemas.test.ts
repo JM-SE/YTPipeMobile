@@ -1,4 +1,6 @@
 import {
+  mobilePushChannelPreferenceSchema,
+  mobilePushChannelPreferencesResponseSchema,
   mobilePushStatusResponseSchema,
   patchMobilePushSettingsResponseSchema,
   registerMobilePushInstallationResponseSchema,
@@ -97,5 +99,37 @@ describe('mobile push response schemas', () => {
         message: 'Test notification sent.',
       }).success,
     ).toBe(true);
+  });
+
+  it('validates channel preference response shapes and rejects camelCase replacement fields', () => {
+    const channelPreference = {
+      channel_id: 1,
+      youtube_channel_id: 'yt-1',
+      title: 'React Native Weekly',
+      is_monitored: true,
+      push_eligible: true,
+      push_enabled: true,
+      preference: { explicitly_set: false, explicit_push_enabled: null, updated_at: null },
+      extra: 'accepted',
+    };
+
+    expect(mobilePushChannelPreferenceSchema.safeParse(channelPreference).success).toBe(true);
+    expect(
+      mobilePushChannelPreferencesResponseSchema.safeParse({
+        channels: [channelPreference],
+        pagination: { limit: 25, offset: 0, total: 1 },
+      }).success,
+    ).toBe(true);
+    expect(
+      mobilePushChannelPreferenceSchema.safeParse({
+        channelId: 1,
+        youtubeChannelId: 'yt-1',
+        title: 'React Native Weekly',
+        isMonitored: true,
+        pushEligible: true,
+        pushEnabled: true,
+        preference: { explicitlySet: false, explicitPushEnabled: null, updatedAt: null },
+      }).success,
+    ).toBe(false);
   });
 });

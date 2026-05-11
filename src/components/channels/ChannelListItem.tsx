@@ -1,17 +1,25 @@
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import type { Channel } from '../../api/types';
+import type { Channel, MobilePushChannelPreference } from '../../api/types';
 import { colors, spacing, typography } from '../../theme/tokens';
 
 type Props = {
   channel: Channel;
   disabled?: boolean;
+  pushPreference?: MobilePushChannelPreference;
   onPress: (channel: Channel) => void;
   onToggle: (channel: Channel, nextValue: boolean) => void;
 };
 
-export function ChannelListItem({ channel, disabled = false, onPress, onToggle }: Props) {
+function pushPreferenceLabel(pushPreference: MobilePushChannelPreference | undefined) {
+  if (!pushPreference) return null;
+  if (!pushPreference.is_monitored || !pushPreference.push_eligible) return 'Push not eligible';
+  return pushPreference.push_enabled ? 'Push enabled' : 'Push disabled';
+}
+
+export function ChannelListItem({ channel, disabled = false, pushPreference, onPress, onToggle }: Props) {
   const { title, is_monitored, latest_detected_video } = channel;
+  const pushLabel = is_monitored ? pushPreferenceLabel(pushPreference) : null;
 
   return (
     <Pressable accessibilityRole="button" onPress={() => onPress(channel)} style={styles.container}>
@@ -21,6 +29,9 @@ export function ChannelListItem({ channel, disabled = false, onPress, onToggle }
           <Text style={[styles.badge, is_monitored ? styles.monitored : styles.unmonitored]}>
             {is_monitored ? 'Monitored' : 'Catalog only'}
           </Text>
+          {pushLabel ? (
+            <Text style={[styles.badge, pushPreference?.push_enabled ? styles.pushEnabled : styles.pushDisabled]}>{pushLabel}</Text>
+          ) : null}
         </View>
         <Switch
           value={is_monitored}
@@ -81,6 +92,14 @@ const styles = StyleSheet.create({
   unmonitored: {
     color: colors.textSecondary,
     backgroundColor: colors.mutedSurface,
+  },
+  pushEnabled: {
+    color: colors.accent,
+    backgroundColor: colors.mutedSurface,
+  },
+  pushDisabled: {
+    color: colors.warning,
+    backgroundColor: colors.warningSurface,
   },
   latest: {
     color: colors.textSecondary,
