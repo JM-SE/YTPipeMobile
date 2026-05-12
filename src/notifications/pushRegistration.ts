@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 import type { MobilePushPlatform } from '../api/types';
@@ -10,6 +11,16 @@ export interface PushRegistrationMetadata {
   app_version: string | null;
   build_number: string | null;
   device_name: string | null;
+}
+
+interface ExpoExtraConfig {
+  eas?: {
+    projectId?: unknown;
+  };
+}
+
+interface EASConfig {
+  projectId?: unknown;
 }
 
 function toPermissionState(status: Notifications.PermissionStatus): PushPermissionState {
@@ -37,9 +48,26 @@ export async function configureAndroidNotificationChannel(): Promise<void> {
   });
 }
 
+function stringOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+export function getExpoProjectId(): string | null {
+  const extra = Constants.expoConfig?.extra as ExpoExtraConfig | undefined;
+  const easConfig = Constants.easConfig as EASConfig | undefined;
+
+  return stringOrNull(extra?.eas?.projectId) ?? stringOrNull(easConfig?.projectId);
+}
+
 export async function getExpoPushToken(): Promise<string> {
   await configureAndroidNotificationChannel();
-  const token = await Notifications.getExpoPushTokenAsync();
+  const projectId = getExpoProjectId();
+
+  if (!projectId) {
+    throw new Error('Expo projectId is required to register push notifications. Run EAS init and rebuild the development build.');
+  }
+
+  const token = await Notifications.getExpoPushTokenAsync({ projectId });
   return token.data;
 }
 
