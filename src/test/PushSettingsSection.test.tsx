@@ -27,6 +27,7 @@ const mockController = {
   unregisterDisabled: true,
   unregisterPush: jest.fn(),
   globalToggleDisabled: true,
+  remotePushUnavailableReason: null,
 };
 
 jest.mock('../screens/settings/usePushSettingsController', () => ({
@@ -129,5 +130,22 @@ describe('PushSettingsSection', () => {
     expect(screen.getByLabelText('Set up push notifications')).toBeDisabled();
     expect(screen.getByLabelText('Send test push notification')).toBeDisabled();
     expect(screen.getByLabelText('Unregister this device from push notifications')).toBeDisabled();
+  });
+
+  it('renders the development build requirement when remote push is unavailable', () => {
+    usePushSettingsController.mockReturnValue({
+      ...mockController,
+      remotePushUnavailableReason:
+        'Remote push notifications require a development build on Android; Expo Go cannot register or receive remote pushes.',
+      setupDisabled: true,
+      testDisabled: true,
+      globalToggleDisabled: true,
+    });
+
+    render(<PushSettingsSection />);
+
+    expect(
+      screen.getByText('Remote push notifications require a development build on Android; Expo Go cannot register or receive remote pushes.'),
+    ).toBeTruthy();
   });
 });

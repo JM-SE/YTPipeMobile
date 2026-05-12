@@ -7,7 +7,7 @@ const API_PROTOCOL = {
   HTTPS: 'https:',
 } as const;
 
-const LOCAL_HTTP_HOSTS = new Set(['localhost', '127.0.0.1', '10.0.2.2']);
+const LOCAL_HTTP_HOSTS = new Set(['localhost', '127.0.0.1', '10.0.2.2', '10.0.3.2']);
 
 export const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/+$/, '');
 
@@ -34,7 +34,7 @@ export const configFormSchema = z.object({
     .min(1, 'API Base URL is required')
     .refine(
       (value) => isValidApiBaseUrl(value),
-      'Enter an HTTPS API URL. HTTP is only supported for local development hosts.',
+      'Enter an HTTPS API URL. In development, HTTP is only supported for local hosts like http://10.0.2.2:4000 on the Android Emulator.',
     ),
   mobileApiToken: z.string().min(1, 'Mobile API token is required'),
 });

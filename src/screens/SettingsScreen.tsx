@@ -23,7 +23,7 @@ export function SettingsScreen({ navigation }: Props) {
   const saveDisabled = saving || clearing || isOffline;
 
   return (
-    <ScreenShell title="Settings" subtitle="Configure backend URL and mobile API token.">
+    <ScreenShell title="Settings" subtitle="Configure backend URL and mobile API token." scrollable>
       <SettingsField
         control={control}
         errors={errors}

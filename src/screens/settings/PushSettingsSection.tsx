@@ -22,6 +22,7 @@ export function PushSettingsSection() {
     permissionState,
     pushStatusError,
     pushStatusLoading,
+    remotePushUnavailableReason,
     sendTestPush,
     setGlobalPushEnabled,
     setupDisabled,
@@ -45,6 +46,7 @@ export function PushSettingsSection() {
       {installationStatus?.token_masked ? <Text style={styles.helperText}>Token: {installationStatus.token_masked}</Text> : null}
       {pushStatusLoading ? <Text style={styles.helperText}>Loading push status...</Text> : null}
       {pushStatusError ? <Text style={styles.errorText}>{pushStatusError.message}</Text> : null}
+      {remotePushUnavailableReason ? <Text style={styles.warningText}>{remotePushUnavailableReason}</Text> : null}
       {isOffline ? <Text style={styles.warningText}>Push actions are disabled while offline. Cached status remains visible.</Text> : null}
 
       <Pressable

@@ -7,6 +7,7 @@ describe('config schema', () => {
       'http://localhost:4000',
       'http://127.0.0.1:8000',
       'http://10.0.2.2:4000',
+      'http://10.0.3.2:4000',
     ];
 
     for (const url of inputs) {
@@ -21,6 +22,7 @@ describe('config schema', () => {
     expect(isValidApiBaseUrl('http://localhost:4000', false)).toBe(false);
     expect(isValidApiBaseUrl('http://127.0.0.1:8000', false)).toBe(false);
     expect(isValidApiBaseUrl('http://10.0.2.2:4000', false)).toBe(false);
+    expect(isValidApiBaseUrl('http://10.0.3.2:4000', false)).toBe(false);
     expect(isValidApiBaseUrl('https://api.example.com', false)).toBe(true);
   });
 

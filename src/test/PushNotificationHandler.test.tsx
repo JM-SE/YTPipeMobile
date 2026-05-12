@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { PushNotificationHandler } from '../notifications/PushNotificationHandler';
 import { queryKeys } from '../api/queryKeys';
 import { createQueryClientWrapper } from './testUtils';
+import * as pushRuntimeEnvironment from '../notifications/pushRuntimeEnvironment';
 
 const mockNavigateToActivityFromNotification = jest.fn();
 const mockNavigateToSettingsFromNotification = jest.fn();
@@ -35,6 +36,7 @@ describe('PushNotificationHandler', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(pushRuntimeEnvironment, 'isRemotePushRuntimeAvailable').mockReturnValue(true);
     listener = null;
     removeSubscription = jest.fn();
 
@@ -43,6 +45,16 @@ describe('PushNotificationHandler', () => {
       listener = callback as NotificationListener;
       return { remove: removeSubscription } as Notifications.Subscription;
     });
+  });
+
+  it('does not load notification listeners when remote push runtime is unavailable', () => {
+    const { Wrapper } = createQueryClientWrapper();
+    jest.spyOn(pushRuntimeEnvironment, 'isRemotePushRuntimeAvailable').mockReturnValue(false);
+
+    render(<PushNotificationHandler />, { wrapper: Wrapper });
+
+    expect(mockedNotifications().getLastNotificationResponse).not.toHaveBeenCalled();
+    expect(mockedNotifications().addNotificationResponseReceivedListener).not.toHaveBeenCalled();
   });
 
   it('handles a runtime new_video tap by invalidating Activity and opening Activity', async () => {

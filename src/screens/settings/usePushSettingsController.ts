@@ -8,13 +8,8 @@ import {
   useUnregisterMobilePushInstallation,
 } from '../../hooks/useMobilePushMutations';
 import { useMobilePushStatus } from '../../hooks/useMobilePushStatus';
-import {
-  getExpoPushToken,
-  getPushPermissionState,
-  getPushRegistrationMetadata,
-  requestPushPermission,
-  type PushPermissionState,
-} from '../../notifications/pushRegistration';
+import type { PushPermissionState } from '../../notifications/pushRegistration';
+import { getRemotePushUnavailableReason } from '../../notifications/pushRuntimeEnvironment';
 import { getOrCreatePushInstallationId, getPushInstallationId, maskInstallationId } from '../../storage/pushInstallationStorage';
 import { useConfigStatus } from '../../config/ConfigStatusContext';
 import { useConnectivityStatus } from '../../connectivity/ConnectivityContext';
@@ -31,6 +26,7 @@ export function usePushSettingsController() {
   const [installationId, setInstallationId] = useState<string | null>(null);
   const [permissionState, setPermissionState] = useState<PushPermissionState>('undetermined');
   const [feedback, setFeedback] = useState<SettingsFeedback | null>(null);
+  const remotePushUnavailableReason = getRemotePushUnavailableReason();
 
   const statusQuery = useMobilePushStatus({ installationId });
   const registerMutation = useRegisterMobilePushInstallation();
@@ -42,7 +38,19 @@ export function usePushSettingsController() {
     let cancelled = false;
 
     async function loadLocalState() {
-      const [storedInstallationId, permission] = await Promise.all([getPushInstallationId(), getPushPermissionState()]);
+      if (remotePushUnavailableReason) {
+        const storedInstallationId = await getPushInstallationId();
+        if (cancelled) return;
+        setInstallationId(storedInstallationId);
+        setPermissionState('not_requested');
+        return;
+      }
+
+      const [{ getPushPermissionState }, storedInstallationId] = await Promise.all([
+        import('../../notifications/pushRegistration'),
+        getPushInstallationId(),
+      ]);
+      const permission = await getPushPermissionState();
       if (cancelled) return;
       setInstallationId(storedInstallationId);
       setPermissionState(permission);
@@ -53,7 +61,7 @@ export function usePushSettingsController() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [remotePushUnavailableReason]);
 
   const hasValidConfig = configStatus === 'present' && Boolean(config);
   const status = statusQuery.data;
@@ -64,14 +72,26 @@ export function usePushSettingsController() {
   const maskedInstallationId = useMemo(() => (installationId ? maskInstallationId(installationId) : null), [installationId]);
 
   const refreshPermissionState = useCallback(async () => {
+    if (remotePushUnavailableReason) {
+      setFeedback({ type: 'error', message: remotePushUnavailableReason });
+      setPermissionState('not_requested');
+      return 'not_requested';
+    }
+
+    const { getPushPermissionState } = await import('../../notifications/pushRegistration');
     const nextPermission = await getPushPermissionState();
     setPermissionState(nextPermission);
     return nextPermission;
-  }, []);
+  }, [remotePushUnavailableReason]);
 
   const setupPush = useCallback(async () => {
     if (!hasValidConfig) {
       setFeedback({ type: 'error', message: 'Save and Test backend configuration before enabling push notifications.' });
+      return;
+    }
+
+    if (remotePushUnavailableReason) {
+      setFeedback({ type: 'error', message: remotePushUnavailableReason });
       return;
     }
 
@@ -83,6 +103,7 @@ export function usePushSettingsController() {
     setFeedback(null);
 
     try {
+      const { getExpoPushToken, getPushRegistrationMetadata, requestPushPermission } = await import('../../notifications/pushRegistration');
       const permission = await requestPushPermission();
       setPermissionState(permission);
 
@@ -106,7 +127,7 @@ export function usePushSettingsController() {
     } catch (error) {
       setFeedback(formatMutationError(error, 'Push registration failed. Retry from Settings.'));
     }
-  }, [hasValidConfig, isOffline, registerMutation]);
+  }, [hasValidConfig, isOffline, registerMutation, remotePushUnavailableReason]);
 
   const unregisterPush = useCallback(async () => {
     if (!installationId) {
@@ -130,6 +151,11 @@ export function usePushSettingsController() {
 
   const setGlobalPushEnabled = useCallback(
     async (enabled: boolean) => {
+      if (remotePushUnavailableReason) {
+        setFeedback({ type: 'error', message: remotePushUnavailableReason });
+        return;
+      }
+
       if (isOffline) {
         setFeedback({ type: 'error', message: 'Reconnect before changing push settings.' });
         return;
@@ -146,10 +172,15 @@ export function usePushSettingsController() {
         setFeedback(formatMutationError(error, 'Could not update global push settings.'));
       }
     },
-    [isOffline, settingsMutation, status?.global.default_for_monitored_channels],
+    [isOffline, remotePushUnavailableReason, settingsMutation, status?.global.default_for_monitored_channels],
   );
 
   const sendTestPush = useCallback(async () => {
+    if (remotePushUnavailableReason) {
+      setFeedback({ type: 'error', message: remotePushUnavailableReason });
+      return;
+    }
+
     if (!installationId) {
       setFeedback({ type: 'error', message: 'Register this device before sending a test notification.' });
       return;
@@ -167,12 +198,13 @@ export function usePushSettingsController() {
     } catch (error) {
       setFeedback(formatMutationError(error as ApiError, 'Could not send test notification.'));
     }
-  }, [installationId, isOffline, testMutation]);
+  }, [installationId, isOffline, remotePushUnavailableReason, testMutation]);
 
-  const setupDisabled = !hasValidConfig || isOffline || isBusy || isRegistered;
+  const remotePushUnavailable = Boolean(remotePushUnavailableReason);
+  const setupDisabled = !hasValidConfig || isOffline || isBusy || isRegistered || remotePushUnavailable;
   const unregisterDisabled = !hasValidConfig || isOffline || isBusy || !installationId;
-  const globalToggleDisabled = !hasValidConfig || isOffline || isBusy || !isRegistered || !isPermissionGranted;
-  const testDisabled = !hasValidConfig || isOffline || isBusy || !isRegistered || !isPermissionGranted || !installationId;
+  const globalToggleDisabled = !hasValidConfig || isOffline || isBusy || !isRegistered || !isPermissionGranted || remotePushUnavailable;
+  const testDisabled = !hasValidConfig || isOffline || isBusy || !isRegistered || !isPermissionGranted || !installationId || remotePushUnavailable;
 
   return {
     delivery: status?.delivery ?? null,
@@ -183,6 +215,7 @@ export function usePushSettingsController() {
     isOffline,
     isPermissionGranted,
     isRegistered,
+    remotePushUnavailableReason,
     maskedInstallationId,
     permissionState,
     pushStatusError: statusQuery.error,
