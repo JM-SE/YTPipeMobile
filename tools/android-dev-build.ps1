@@ -34,5 +34,13 @@ if (-not $javaHome) {
 $env:JAVA_HOME = $javaHome
 $env:Path = "$(Join-Path $javaHome 'bin');$env:Path"
 
+$googleServicesFile = Join-Path (Get-Location) 'google-services.json'
+$isHelpCommand = $ExpoArgs -contains '--help' -or $ExpoArgs -contains '-h'
+
+if (-not $isHelpCommand -and -not (Test-Path -LiteralPath $googleServicesFile)) {
+  Write-Error "Missing google-services.json. Create/download it from Firebase for Android package com.ytpipe.mobile and place it at: $googleServicesFile"
+  exit 1
+}
+
 & npx expo run:android @ExpoArgs
 exit $LASTEXITCODE

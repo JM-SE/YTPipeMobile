@@ -33,6 +33,11 @@ yarn-error.*
 # local env files
 .env*.local
 
+# local Firebase mobile client config
+# Generate this from Firebase for Android package com.ytpipe.mobile.
+# The app config points to ./google-services.json for local/dev builds.
+google-services.json
+
 # typescript
 *.tsbuildinfo
 

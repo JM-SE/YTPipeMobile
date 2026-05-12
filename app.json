@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.ytpipe.mobile",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
