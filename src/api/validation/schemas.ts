@@ -25,7 +25,7 @@ const paginationSchema = z
     offset: z.number(),
     total: z.number(),
   })
-  .passthrough();
+  .loose();
 
 const latestDetectedVideoSchema = z
   .object({
@@ -35,7 +35,7 @@ const latestDetectedVideoSchema = z
     youtube_url: z.string(),
     published_at: z.string(),
   })
-  .passthrough();
+  .loose();
 
 const channelSchema = z
   .object({
@@ -47,7 +47,7 @@ const channelSchema = z
     baseline_established_at: nullableStringSchema,
     latest_detected_video: latestDetectedVideoSchema.nullable(),
   })
-  .passthrough();
+  .loose();
 
 const pollResultSchema = z
   .object({
@@ -59,7 +59,7 @@ const pollResultSchema = z
     quota_blocked: z.boolean(),
     channel_errors: z.array(z.string()).optional(),
   })
-  .passthrough();
+  .loose();
 
 export const statusResponseSchema = z
   .object({
@@ -73,7 +73,7 @@ export const statusResponseSchema = z
         last_error_message: nullableStringSchema,
         metadata: metadataSchema,
       })
-      .passthrough(),
+      .loose(),
     polling: z
       .object({
         last_success_at: nullableStringSchema,
@@ -81,7 +81,7 @@ export const statusResponseSchema = z
         last_error_message: nullableStringSchema,
         last_run: pollResultSchema.nullable(),
       })
-      .passthrough(),
+      .loose(),
     email: z
       .object({
         last_attempt_at: nullableStringSchema,
@@ -93,7 +93,7 @@ export const statusResponseSchema = z
         delivered_count: z.number(),
         failed_count: z.number(),
       })
-      .passthrough(),
+      .loose(),
     quota: z
       .object({
         daily_quota_budget: z.number(),
@@ -103,22 +103,22 @@ export const statusResponseSchema = z
         safety_stop_enabled: z.boolean(),
         safety_stop_triggered_at: nullableStringSchema,
       })
-      .passthrough(),
+      .loose(),
     channels: z
       .object({
         imported_count: z.number(),
         monitored_count: z.number(),
       })
-      .passthrough(),
+      .loose(),
   })
-  .passthrough() satisfies z.ZodType<StatusResponse>;
+  .loose() satisfies z.ZodType<StatusResponse>;
 
 export const channelsResponseSchema = z
   .object({
     channels: z.array(channelSchema),
     pagination: paginationSchema,
   })
-  .passthrough() satisfies z.ZodType<ChannelsResponse>;
+  .loose() satisfies z.ZodType<ChannelsResponse>;
 
 export const updateChannelMonitoringResponseSchema = z
   .object({
@@ -127,7 +127,7 @@ export const updateChannelMonitoringResponseSchema = z
     last_seen_video_id: nullableStringSchema,
     baseline_established_at: nullableStringSchema,
   })
-  .passthrough() satisfies z.ZodType<UpdateChannelMonitoringResponse>;
+  .loose() satisfies z.ZodType<UpdateChannelMonitoringResponse>;
 
 export const syncResultSchema = z
   .object({
@@ -136,7 +136,7 @@ export const syncResultSchema = z
     channels_created: z.number().optional(),
     channels_updated: z.number().optional(),
   })
-  .passthrough() satisfies z.ZodType<SyncResult>;
+  .loose() satisfies z.ZodType<SyncResult>;
 
 export const pollResultResponseSchema = pollResultSchema satisfies z.ZodType<PollResult>;
 
@@ -158,14 +158,14 @@ const activityItemSchema = z
     last_attempt_at: nullableStringSchema,
     last_error: nullableStringSchema,
   })
-  .passthrough();
+  .loose();
 
 export const activityResponseSchema = z
   .object({
     items: z.array(activityItemSchema),
     pagination: paginationSchema,
   })
-  .passthrough() satisfies z.ZodType<ActivityResponse>;
+  .loose() satisfies z.ZodType<ActivityResponse>;
 
 const mobilePushPlatformSchema = z.enum(['ios', 'android', 'unknown']);
 
@@ -178,7 +178,7 @@ export const mobilePushStatusResponseSchema = z
         first_enabled_at: nullableStringSchema,
         updated_at: nullableStringSchema,
       })
-      .passthrough(),
+      .loose(),
     installation: z
       .object({
         installation_id: z.string(),
@@ -193,7 +193,7 @@ export const mobilePushStatusResponseSchema = z
         last_seen_at: nullableStringSchema,
         last_unregistered_at: nullableStringSchema,
       })
-      .passthrough(),
+      .loose(),
     delivery: z
       .object({
         last_attempt_at: nullableStringSchema,
@@ -203,9 +203,9 @@ export const mobilePushStatusResponseSchema = z
         last_expo_status: nullableStringSchema,
         last_receipt_checked_at: nullableStringSchema,
       })
-      .passthrough(),
+      .loose(),
   })
-  .passthrough() satisfies z.ZodType<MobilePushStatusResponse>;
+  .loose() satisfies z.ZodType<MobilePushStatusResponse>;
 
 export const registerMobilePushInstallationResponseSchema = z
   .object({
@@ -216,7 +216,7 @@ export const registerMobilePushInstallationResponseSchema = z
     token_masked: nullableStringSchema,
     last_registered_at: nullableStringSchema,
   })
-  .passthrough() satisfies z.ZodType<RegisterMobilePushInstallationResponse>;
+  .loose() satisfies z.ZodType<RegisterMobilePushInstallationResponse>;
 
 export const unregisterMobilePushInstallationResponseSchema = z
   .object({
@@ -225,7 +225,7 @@ export const unregisterMobilePushInstallationResponseSchema = z
     enabled: z.boolean(),
     unregistered_at: nullableStringSchema,
   })
-  .passthrough() satisfies z.ZodType<UnregisterMobilePushInstallationResponse>;
+  .loose() satisfies z.ZodType<UnregisterMobilePushInstallationResponse>;
 
 export const patchMobilePushSettingsResponseSchema = z
   .object({
@@ -235,7 +235,7 @@ export const patchMobilePushSettingsResponseSchema = z
     updated_at: nullableStringSchema,
     monitored_channels_effectively_enabled_count: z.number(),
   })
-  .passthrough() satisfies z.ZodType<PatchMobilePushSettingsResponse>;
+  .loose() satisfies z.ZodType<PatchMobilePushSettingsResponse>;
 
 export const sendMobilePushTestResponseSchema = z
   .object({
@@ -247,7 +247,7 @@ export const sendMobilePushTestResponseSchema = z
     expo_ticket_id: nullableStringSchema,
     message: z.string(),
   })
-  .passthrough() satisfies z.ZodType<SendMobilePushTestResponse>;
+  .loose() satisfies z.ZodType<SendMobilePushTestResponse>;
 
 const mobilePushChannelPreferenceValueSchema = z
   .object({
@@ -255,7 +255,7 @@ const mobilePushChannelPreferenceValueSchema = z
     explicit_push_enabled: z.boolean().nullable(),
     updated_at: nullableStringSchema,
   })
-  .passthrough();
+  .loose();
 
 export const mobilePushChannelPreferenceSchema = z
   .object({
@@ -267,11 +267,11 @@ export const mobilePushChannelPreferenceSchema = z
     push_enabled: z.boolean(),
     preference: mobilePushChannelPreferenceValueSchema,
   })
-  .passthrough() satisfies z.ZodType<MobilePushChannelPreference>;
+  .loose() satisfies z.ZodType<MobilePushChannelPreference>;
 
 export const mobilePushChannelPreferencesResponseSchema = z
   .object({
     channels: z.array(mobilePushChannelPreferenceSchema),
     pagination: paginationSchema,
   })
-  .passthrough() satisfies z.ZodType<MobilePushChannelPreferencesResponse>;
+  .loose() satisfies z.ZodType<MobilePushChannelPreferencesResponse>;

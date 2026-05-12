@@ -1,3 +1,4 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { Channel } from '../api/types';
 
 export type SetupStackParamList = {
@@ -12,7 +13,7 @@ export type AppTabsParamList = {
 };
 
 export type AppStackParamList = {
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<AppTabsParamList> | undefined;
   Settings: undefined;
   ChannelDetail: { channel: Channel };
 };
