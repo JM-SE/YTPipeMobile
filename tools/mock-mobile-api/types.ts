@@ -2,6 +2,8 @@ export type DeliveryStatus = 'pending' | 'delivered' | 'pending_retry' | 'failed
 
 export type MonitoringFilter = 'monitored' | 'unmonitored' | 'all';
 
+export type MobilePushPlatform = 'ios' | 'android' | 'unknown';
+
 export type RunOutcome = 'success' | 'partial_failure' | 'quota_blocked' | 'no_new_videos';
 
 export interface FastApiError {
@@ -120,4 +122,40 @@ export interface ActivityItem {
 export interface ActivityResponse {
   items: ActivityItem[];
   pagination: Pagination;
+}
+
+export interface MockPushGlobalSettings {
+  enabled: boolean;
+  default_for_monitored_channels: boolean;
+  first_enabled_at: string | null;
+  updated_at: string | null;
+}
+
+export interface MockPushInstallation {
+  installation_id: string;
+  expo_push_token: string;
+  registered: boolean;
+  enabled: boolean;
+  platform: MobilePushPlatform;
+  app_version: string | null;
+  build_number: string | null;
+  device_name: string | null;
+  token_masked: string | null;
+  last_registered_at: string | null;
+  last_seen_at: string | null;
+  last_unregistered_at: string | null;
+}
+
+export interface MockPushDeliveryStatus {
+  last_attempt_at: string | null;
+  last_success_at: string | null;
+  last_error: string | null;
+  last_expo_ticket_id: string | null;
+  last_expo_status: string | null;
+  last_receipt_checked_at: string | null;
+}
+
+export interface MockPushPreference {
+  explicit_push_enabled: boolean;
+  updated_at: string;
 }

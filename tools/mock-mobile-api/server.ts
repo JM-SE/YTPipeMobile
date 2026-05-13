@@ -2,7 +2,7 @@ import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { MOCK_TOKEN, now } from './seed';
 import { createInitialState, refreshStatusCounts } from './state';
-import type { ActivityItem, PollResult, StatusResponse, SyncResult } from './types';
+import type { ActivityItem, Channel, MobilePushPlatform, PollResult, StatusResponse, SyncResult } from './types';
 import {
   assertKnownScenario,
   authError,
@@ -28,6 +28,8 @@ if (!Number.isInteger(port) || port <= 0 || port > 65535) {
 
 const app = express();
 let state = createInitialState();
+
+const MOCK_PUSH_SUCCESS_MESSAGE = 'Mock test notification accepted. No real remote push was sent.';
 
 app.use(cors());
 app.use(express.json());
@@ -135,6 +137,252 @@ app.patch('/internal/channels/:channel_id/monitoring', (req, res) => {
     last_seen_video_id: channel.last_seen_video_id,
     baseline_established_at: channel.baseline_established_at,
   });
+});
+
+const maskExpoPushToken = (token: string) => {
+  if (token.length <= 12) return '***';
+  return `${token.slice(0, 10)}…${token.slice(-6)}`;
+};
+
+const isStringOrNull = (value: unknown): value is string | null => typeof value === 'string' || value === null;
+
+const parsePushPlatform = (value: unknown): MobilePushPlatform | null => {
+  if (value === 'ios' || value === 'android' || value === 'unknown') return value;
+  return null;
+};
+
+const getInstallationIdFromQuery = (req: Request) => getStringQuery(req.query.installation_id);
+
+const getMonitoredChannelsEffectivelyEnabledCount = () =>
+  state.channels.filter((channel) => toMobilePushChannelPreference(channel).push_enabled).length;
+
+const toMobilePushChannelPreference = (channel: Channel) => {
+  const preference = state.pushPreferences[channel.channel_id];
+  const explicitPushEnabled = preference?.explicit_push_enabled ?? null;
+  const explicitPreferenceEnabled = explicitPushEnabled ?? state.pushGlobalSettings.default_for_monitored_channels;
+  const pushEligible = channel.is_monitored;
+  const pushEnabled = state.pushGlobalSettings.enabled && pushEligible && explicitPreferenceEnabled;
+
+  return {
+    channel_id: channel.channel_id,
+    youtube_channel_id: channel.youtube_channel_id,
+    title: channel.title,
+    is_monitored: channel.is_monitored,
+    push_eligible: pushEligible,
+    push_enabled: pushEnabled,
+    preference: {
+      explicitly_set: Boolean(preference),
+      explicit_push_enabled: explicitPushEnabled,
+      updated_at: preference?.updated_at ?? null,
+    },
+  };
+};
+
+app.get('/internal/mobile-push/status', (req, res) => {
+  const installationId = getInstallationIdFromQuery(req);
+  if (!installationId) {
+    validationError(res, 'installation_id query parameter is required');
+    return;
+  }
+
+  const installation = state.pushInstallations[installationId];
+  res.json({
+    global: state.pushGlobalSettings,
+    installation: installation
+      ? {
+          installation_id: installation.installation_id,
+          registered: installation.registered,
+          enabled: installation.enabled,
+          platform: installation.platform,
+          app_version: installation.app_version,
+          build_number: installation.build_number,
+          device_name: installation.device_name,
+          token_masked: installation.token_masked,
+          last_registered_at: installation.last_registered_at,
+          last_seen_at: installation.last_seen_at,
+          last_unregistered_at: installation.last_unregistered_at,
+        }
+      : {
+          installation_id: installationId,
+          registered: false,
+          enabled: false,
+          platform: 'unknown',
+          app_version: null,
+          build_number: null,
+          device_name: null,
+          token_masked: null,
+          last_registered_at: null,
+          last_seen_at: null,
+          last_unregistered_at: null,
+        },
+    delivery: state.pushDelivery,
+  });
+});
+
+app.post('/internal/mobile-push/register', (req, res) => {
+  const installationId = typeof req.body?.installation_id === 'string' ? req.body.installation_id : null;
+  const expoPushToken = typeof req.body?.expo_push_token === 'string' ? req.body.expo_push_token : null;
+  const platform = parsePushPlatform(req.body?.platform);
+
+  if (!installationId || !expoPushToken || !platform) {
+    validationError(res, 'body.installation_id, body.expo_push_token, and body.platform are required');
+    return;
+  }
+
+  if (!isStringOrNull(req.body?.app_version) || !isStringOrNull(req.body?.build_number) || !isStringOrNull(req.body?.device_name)) {
+    validationError(res, 'body.app_version, body.build_number, and body.device_name must be strings or null');
+    return;
+  }
+
+  const previous = state.pushInstallations[installationId];
+  state.pushInstallations[installationId] = {
+    installation_id: installationId,
+    expo_push_token: expoPushToken,
+    registered: true,
+    enabled: true,
+    platform,
+    app_version: req.body.app_version,
+    build_number: req.body.build_number,
+    device_name: req.body.device_name,
+    token_masked: maskExpoPushToken(expoPushToken),
+    last_registered_at: now,
+    last_seen_at: now,
+    last_unregistered_at: previous?.last_unregistered_at ?? null,
+  };
+
+  res.json({
+    installation_id: installationId,
+    registered: true,
+    enabled: true,
+    global_enabled: state.pushGlobalSettings.enabled,
+    token_masked: state.pushInstallations[installationId].token_masked,
+    last_registered_at: now,
+  });
+});
+
+app.delete('/internal/mobile-push/installations/:installation_id', (req, res) => {
+  const installationId = req.params.installation_id;
+  const installation = state.pushInstallations[installationId];
+
+  if (installation) {
+    installation.registered = false;
+    installation.enabled = false;
+    installation.last_unregistered_at = now;
+    installation.last_seen_at = now;
+  }
+
+  res.json({
+    installation_id: installationId,
+    registered: false,
+    enabled: false,
+    unregistered_at: now,
+  });
+});
+
+app.patch('/internal/mobile-push/settings', (req, res) => {
+  if (typeof req.body?.enabled !== 'boolean' || typeof req.body?.default_for_monitored_channels !== 'boolean') {
+    validationError(res, 'body.enabled and body.default_for_monitored_channels must be booleans');
+    return;
+  }
+
+  state.pushGlobalSettings.enabled = req.body.enabled;
+  state.pushGlobalSettings.default_for_monitored_channels = req.body.default_for_monitored_channels;
+  state.pushGlobalSettings.updated_at = now;
+
+  if (req.body.enabled && !state.pushGlobalSettings.first_enabled_at) {
+    state.pushGlobalSettings.first_enabled_at = now;
+  }
+
+  res.json({
+    ...state.pushGlobalSettings,
+    monitored_channels_effectively_enabled_count: getMonitoredChannelsEffectivelyEnabledCount(),
+  });
+});
+
+app.post('/internal/mobile-push/test', (req, res) => {
+  const installationId = typeof req.body?.installation_id === 'string' ? req.body.installation_id : null;
+  if (!installationId) {
+    validationError(res, 'body.installation_id is required');
+    return;
+  }
+
+  const installation = state.pushInstallations[installationId];
+  if (!installation?.registered || !installation.enabled) {
+    prerequisiteError(res, 'Mock push installation is not registered or enabled');
+    return;
+  }
+
+  state.pushDelivery.last_attempt_at = now;
+  state.pushDelivery.last_success_at = now;
+  state.pushDelivery.last_error = null;
+  state.pushDelivery.last_expo_ticket_id = 'mock-ticket-no-delivery';
+  state.pushDelivery.last_expo_status = 'mock_ok';
+  state.pushDelivery.last_receipt_checked_at = null;
+
+  res.json({
+    sent: true,
+    installation_id: installationId,
+    event_type: 'test',
+    last_attempt_at: now,
+    expo_status: 'mock_ok',
+    expo_ticket_id: 'mock-ticket-no-delivery',
+    message: MOCK_PUSH_SUCCESS_MESSAGE,
+  });
+});
+
+app.get('/internal/mobile-push/channel-preferences', (req, res) => {
+  const monitoring = getStringQuery(req.query.monitoring) ?? 'monitored';
+  if (monitoring !== 'monitored' && monitoring !== 'all') {
+    validationError(res, 'monitoring must be monitored or all');
+    return;
+  }
+
+  const parsedPagination = parseLimitOffset(req);
+  if ('error' in parsedPagination) {
+    validationError(res, parsedPagination.error);
+    return;
+  }
+
+  const query = getStringQuery(req.query.query);
+  const channels = monitoring === 'monitored' ? state.channels.filter((channel) => channel.is_monitored) : state.channels;
+  const normalizedQuery = query?.trim().toLowerCase();
+  const filtered = normalizedQuery
+    ? channels.filter((channel) => [channel.title, channel.youtube_channel_id].some((value) => value.toLowerCase().includes(normalizedQuery)))
+    : channels;
+  const page = paginate(filtered.map(toMobilePushChannelPreference), parsedPagination.limit, parsedPagination.offset);
+
+  res.json({ channels: page.items, pagination: page.pagination });
+});
+
+app.patch('/internal/mobile-push/channels/:channel_id', (req, res) => {
+  const channelId = Number(req.params.channel_id);
+  if (!Number.isInteger(channelId)) {
+    validationError(res, 'channel_id must be an integer');
+    return;
+  }
+
+  if (typeof req.body?.push_enabled !== 'boolean') {
+    validationError(res, 'body.push_enabled must be a boolean');
+    return;
+  }
+
+  const channel = state.channels.find((item) => item.channel_id === channelId);
+  if (!channel) {
+    notFoundError(res, `Channel ${channelId} was not found`);
+    return;
+  }
+
+  if (!channel.is_monitored) {
+    prerequisiteError(res, 'Channel must be monitored before changing push preference');
+    return;
+  }
+
+  state.pushPreferences[channelId] = {
+    explicit_push_enabled: req.body.push_enabled,
+    updated_at: now,
+  };
+
+  res.json(toMobilePushChannelPreference(channel));
 });
 
 app.post('/internal/subscriptions/sync', (req, res) => {
